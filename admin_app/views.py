@@ -317,13 +317,19 @@ def remove_product(request, id):
 
 @login_required(login_url='/admin/login/?next=/admin_side/')
 def allproduct(request):
-    products = SubProduct.objects.all().order_by('-created_at')
+    products = SubProduct.objects.all().order_by('-created_at').select_related('product', 'product__category').prefetch_related('product_size_color')
    
+    # Add stock information to each product
+    for product in products:
+        product.total_stock = product.get_stock_quantity()
+        product.low_stock_variants = product.product_size_color.filter(stock_quantity__lt=10, stock_quantity__gt=0).count()
+        product.out_of_stock_variants = product.product_size_color.filter(stock_quantity=0).count()
+        product.variant_count = product.product_size_color.count()
    
     context = {
-        'products':products,
+        'products': products,
     }
-    return render(request, 'all_product.html',context)
+    return render(request, 'all_product.html', context)
 
 
 @login_required(login_url='/admin/login/?next=/admin_side/')
@@ -335,10 +341,31 @@ def remove_products(request, id):
 
 @login_required(login_url='/admin/login/?next=/admin_side/')
 def product_list(request):
-    # print('product_list')
-    products = Product.objects.all().order_by('-created_at')
+    # Get all products with their stock information
+    products = Product.objects.all().order_by('-created_at').prefetch_related('subproduct_set', 'product_size_color_set')
+    
+    # Add stock information to each product
+    product_list_with_stock = []
+    for product in products:
+        # Get all subproducts for this product
+        subproducts = product.subproduct_set.all()
+        # Calculate total stock across all size/color combinations
+        total_stock = product.product_size_color_set.aggregate(total=Sum('stock_quantity'))['total'] or 0
+        # Get low stock count
+        low_stock_count = product.product_size_color_set.filter(stock_quantity__lt=10).count()
+        # Get out of stock count
+        out_of_stock_count = product.product_size_color_set.filter(stock_quantity=0).count()
+        
+        product_list_with_stock.append({
+            'product': product,
+            'total_stock': total_stock,
+            'low_stock_count': low_stock_count,
+            'out_of_stock_count': out_of_stock_count,
+            'subproducts': subproducts,
+        })
+    
     context = {
-        'products':products,
+        'products': product_list_with_stock,
     }
     return render(request, 'product_list.html', context)
 
