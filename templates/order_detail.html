@@ -1,0 +1,183 @@
+{% extends 'admin_layout.html' %}
+{% load static %}
+
+{% block title %}Order List{% endblock %}
+
+
+{% block body %}
+
+<div class="page-body-wrapper">
+
+    <div class="page-body">
+        <div class="title-header title-header-block package-card">
+            <div>
+                <h5>Order #{{order.order_id}}</h5>
+            </div>
+            <div class="card-order-section">
+                <ul>
+                    <li>
+                        {{order.order_date|date:"F d, Y " }}</li>
+                    </li>
+                    <li>{{ order.total_quantity }} items</li>
+                    <li>Total {{order.total_amount}}</li>
+                </ul>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- tracking table start -->
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="bg-inner cart-section order-details-table">
+                                <div class="row g-4">
+                                    <div class="col-xl-8">
+                                        <div class="table-responsive table-details">
+                                            <table class="table cart-table table-borderless">
+                                                <thead>
+                                                    <tr>
+                                                        <th colspan="4">Items</th>
+                                                      
+                                                    </tr>
+                                                </thead>
+                                            
+                                                <tbody>
+                                                    {% for item in order_items %}
+                                                    <tr class="table-order">
+                                                        <td>
+                                                            <a href="javascript:void(0)">
+                                                                <img src="{% if item.subproduct_id.image|slice:':4' == 'http' %}{{ item.subproduct_id.image }}{% elif item.subproduct_id.image|slice:':1' == '/' %}{{ item.subproduct_id.image }}{% elif item.subproduct_id.image|slice:':7' == 'images/' %}https://images.prathmeshsoni.works/{{ item.subproduct_id.image }}{% else %}/media/{{ item.subproduct_id.image }}{% endif %}"
+                                                                    class="img-fluid blur-up lazyload" alt="">
+                                                            </a>
+                                                        </td>
+                                                        <td>
+                                                            <p>Product Name</p>
+                                                            <h5>{{ item.subproduct_id.product.name}} - {{item.color}} - {{item.size}} </h5>
+                                                        </td>
+                                                        <td>
+                                                            <p>Quantity</p>
+                                                            <h5>{{item.quantity }}</h5>
+                                                        </td>
+                                                        <td>
+                                                            <p>Price</p>
+                                                            <h5>₹{{item.price}}</h5>
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+
+                                                <tfoot>
+                                                    <tr class="table-order">
+                                                        <td colspan="3">
+                                                            <h5>Subtotal :</h5>
+                                                        </td>
+                                                        <td>
+                                                            <h4>{{subtotal}}</h4>
+                                                        </td>
+                                                    </tr>
+
+                                                    <tr class="table-order">
+                                                        <td colspan="3">
+                                                            <h5>Shipping :</h5>
+                                                        </td>
+                                                        <td>
+                                                            <h4>₹{{shipping_charge}}</h4>
+                                                        </td>
+                                                    </tr>
+
+                                                
+
+                                                    <tr class="table-order">
+                                                        <td colspan="3">
+                                                            <h4 class="theme-color fw-bold">Total Price :</h4>
+                                                        </td>
+                                                        <td>
+                                                            <h4 class="theme-color fw-bold">₹{{ total }}</h4>
+                                                        </td>
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-xl-4">
+                                        <div class="order-success">
+                                            <div class="row g-4">
+                                                <h4>summery</h4>
+                                                <ul class="order-details">
+                                                    <li>Order ID: {{ order.order_id }}</li>
+                                                    <li>Order Date: {{order.order_date|date:"F d, Y" }}</li>
+                                                    <li>Order Total: ₹{{ total}}</li>
+                                                </ul>
+
+                                                <h4>shipping address</h4>
+                                                <ul class="order-details">
+                                                    <li>{{order.address_id.first_name}} {{order.address_id.last_name}}</li>
+                                                    <li>{{order.address_id.street_address}}, {{order.address_id.city}}, {{order.address_id.state}}</li>
+                                                    <li>{{order.address_id.country}}, {{order.address_id.pincode}}</li>
+                                                    <li> Contact No. {{order.address_id.phone_number}}</li>
+                                                </ul>
+
+                                                <div class="payment-mode">
+                                                <h4>Order Status</h4>
+                                                    <form method="post" action="{% url 'update_order_status' order.order_id %}" class="d-inline" id="statusForm{{ order.order_id }}">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="redirect_url" value="order_detail">
+                                                        <select name="status" class="form-select form-select-sm mb-2" onchange="this.form.submit()" style="min-width: 150px;">
+                                                            <option value="Pending" {% if order.order_status == "Pending" %}selected{% endif %}>Pending</option>
+                                                            <option value="Delivered" {% if order.order_status == "Delivered" %}selected{% endif %}>Delivered</option>
+                                                            <option value="Cancelled" {% if order.order_status == "Cancelled" %}selected{% endif %}>Cancelled</option>
+                                                            <option value="Returned" {% if order.order_status == "Returned" %}selected{% endif %}>Returned</option>
+                                                        </select>
+                                                    </form>
+                                                    <div class="mt-2">
+                                                        {% if order.order_status == "Cancelled" %}
+                                                            <span class="badge bg-danger">{{ order.order_status }}</span>
+                                                        {% elif order.order_status == "Delivered" %}
+                                                            <span class="badge bg-success">{{ order.order_status }}</span>
+                                                        {% elif order.order_status == "Returned" %}
+                                                            <span class="badge bg-warning text-dark">{{ order.order_status }}</span>                                         
+                                                        {% elif order.order_status == "Pending" %}
+                                                            <span class="badge bg-dark">{{ order.order_status }}</span>
+                                                        {% else %}
+                                                            <span class="badge bg-secondary">{{ order.order_status }}</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                <div class="payment-mode">
+                                                    <h4>payment method</h4>
+                                                    <p>{{order.payment_mode}}</p>
+                                                </div>
+
+                                                <div class="delivery-sec">
+                                                    <h3>expected date of delivery: <span>{{ order.delivery_date}}</span>
+                                                    </h3>
+                                                    <a href="{% url 'order_list' %}" class="btn btn-sm btn-primary">View All Orders</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- section end -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- tracking table end -->
+
+    </div>
+</div>
+    
+{% endblock %}

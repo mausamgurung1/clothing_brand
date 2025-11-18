@@ -1,0 +1,165 @@
+{% extends 'admin_layout.html' %}
+{% load static %}
+
+{% block title %}Order List{% endblock %}
+
+
+{% block body %}
+
+<div class="page-body-wrapper">
+ 
+    <!-- Order section Start -->
+    <div class="page-body">
+        <div class="title-header d-flex justify-content-between align-items-center">
+            <h5>Order List</h5>
+            <div class="d-flex gap-2">
+                <a href="{% url 'order_list' %}" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    All ({{ total_orders }})
+                </a>
+                <a href="{% url 'order_list' %}?status=Pending" class="btn btn-sm {% if status_filter == 'Pending' %}btn-dark{% else %}btn-outline-dark{% endif %}">
+                    Pending ({{ pending_count }})
+                </a>
+                <a href="{% url 'order_list' %}?status=Delivered" class="btn btn-sm {% if status_filter == 'Delivered' %}btn-success{% else %}btn-outline-success{% endif %}">
+                    Delivered ({{ delivered_count }})
+                </a>
+                <a href="{% url 'order_list' %}?status=Cancelled" class="btn btn-sm {% if status_filter == 'Cancelled' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                    Cancelled ({{ cancelled_count }})
+                </a>
+                <a href="{% url 'order_list' %}?status=Returned" class="btn btn-sm {% if status_filter == 'Returned' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                    Returned ({{ returned_count }})
+                </a>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Table Start -->
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div>
+                                <div class="table-responsive table-desi">
+                                    <table class="table table-striped all-package">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Order Code</th>
+                                                <th>User Name</th>
+                                                <th>Date</th>
+                                                <th>Payment Method</th>
+                                                <th>Total Quantity</th>
+                                                <th>Amount</th>
+                                                <th>Status</th>
+                                                <th>Option</th>
+
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            
+                                            {% for order in orders %}
+                                            <tr>
+                                                <td>{{ forloop.counter }}</td>
+                                                <td>
+                                            <a href="{% url "order_detail" order.order_id %}">
+                                                    {{ order.order_id }}
+                                            </a>
+                                                </td>
+
+                                                <td>{{ order.user_id.user_name }}</td>
+                                                <td>{{ order.order_date}}</td>
+
+                                                <td>{{order.payment_mode}}</td>
+
+                                                {% comment %} <td class="order-success">
+                                                    <span></span>
+                                                </td> {% endcomment %}
+
+                                                <td>{{ order.total_quantity }}</td>
+                                                <td>₹{{ order.total_amount}}</td>
+                                                <td>
+                                                    <form method="post" action="{% url 'update_order_status' order.order_id %}" class="d-inline" id="statusForm{{ order.order_id }}">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="redirect_url" value="order_list">
+                                                        <select name="status" class="form-select form-select-sm" onchange="updateStatus({{ order.order_id }})" style="min-width: 130px;">
+                                                            <option value="Pending" {% if order.order_status == "Pending" %}selected{% endif %}>Pending</option>
+                                                            <option value="Delivered" {% if order.order_status == "Delivered" %}selected{% endif %}>Delivered</option>
+                                                            <option value="Cancelled" {% if order.order_status == "Cancelled" %}selected{% endif %}>Cancelled</option>
+                                                            <option value="Returned" {% if order.order_status == "Returned" %}selected{% endif %}>Returned</option>
+                                                        </select>
+                                                    </form>
+                                                </td>
+
+
+                                                <td>
+                                                    <ul>
+                                                        <li>
+                                                            <a href="{% url "order_detail" order.order_id %}" title="View Details">
+                                                                <span class="lnr lnr-eye"></span>
+                                                            </a>
+                                                        </li>
+
+                                                        <li>
+                                                            <a href="{% url "order_detail" order.order_id %}" title="Edit Order">
+                                                                <span class="lnr lnr-pencil"></span>
+                                                            </a>
+                                                        </li>
+
+                                                        <li>
+                                                            <a href="{% url "order_delete" order.order_id %}" onclick="return confirm('Are you sure you want to delete this order?')" title="Delete Order">
+                                                                <span class="lnr lnr-trash"></span>
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                     
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Table End -->
+
+        
+    </div>
+    <!-- Order section End -->
+</div>
+
+<script>
+function updateStatus(orderId) {
+    var form = document.getElementById('statusForm' + orderId);
+    var select = form.querySelector('select[name="status"]');
+    var newStatus = select.value;
+    
+    if (confirm('Are you sure you want to change order status to ' + newStatus + '?')) {
+        form.submit();
+    } else {
+        // Reset to previous value if cancelled
+        select.value = select.dataset.originalValue || select.options[0].value;
+    }
+}
+
+// Store original values on page load
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('select[name="status"]').forEach(function(select) {
+        select.dataset.originalValue = select.value;
+    });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,481 @@
+{% extends 'admin_layout.html' %}
+{% load static %}
+{% block title %}Dashboard{% endblock %}
+
+{% block body %}
+<div class="page-body">
+    <div class="container-fluid">
+        <!-- Welcome Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-1">Welcome Back, Administrator! 👋</h4>
+                                <p class="text-muted mb-0">Here's what's happening with your store today.</p>
+                            </div>
+                            <div class="text-end">
+                                <a href="{% url 'add_product' %}" class="btn btn-primary">
+                                    <i data-feather="plus-circle" class="me-1"></i> Add New Product
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row">
+            <!-- Total Earnings Card -->
+            <div class="col-sm-6 col-xxl-3 col-lg-6 mt-4">
+                <div class="b-b-primary border-5 border-0 card o-hidden">
+                    <div class="custome-1-bg b-r-4 card-body">
+                        <div class="media align-items-center static-top-widget">
+                            <div class="media-body p-0">
+                                <span class="m-0">Total Earnings</span>
+                                <h4 class="mb-0">₹{{ total_earning|floatformat:0 }}</h4>
+                                {% if earning_growth > 0 %}
+                                <small class="text-success"><i data-feather="trending-up" class="me-1"></i>+{{ earning_growth }}% this month</small>
+                                {% endif %}
+                            </div>
+                            <div class="align-self-center text-center">
+                                <i data-feather="dollar-sign" class="text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Orders Card -->
+            <div class="col-sm-6 col-xxl-3 col-lg-6 mt-4">
+                <div class="b-b-danger border-5 border-0 card o-hidden">
+                    <div class="custome-2-bg b-r-4 card-body">
+                        <div class="media static-top-widget">
+                            <div class="media-body p-0">
+                                <span class="m-0">Total Orders</span>
+                                <h4 class="mb-0 counter">{{ total_booking }}</h4>
+                                {% if orders_growth > 0 %}
+                                <small class="text-success"><i data-feather="trending-up" class="me-1"></i>+{{ orders_growth }}% this month</small>
+                                {% endif %}
+                            </div>
+                            <div class="align-self-center text-center">
+                                <i data-feather="shopping-bag" class="text-danger"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Products Card -->
+            <div class="col-sm-6 col-xxl-3 col-lg-6 mt-4">
+                <div class="b-b-secondary border-5 border-0 card o-hidden">
+                    <div class="custome-3-bg b-r-4 card-body">
+                        <div class="media static-top-widget">
+                            <div class="media-body p-0">
+                                <span class="m-0">Total Products</span>
+                                <h4 class="mb-0 counter">{{ total_product }}</h4>
+                                {% if low_stock_count > 0 %}
+                                <small class="text-warning"><i data-feather="alert-triangle" class="me-1"></i>{{ low_stock_count }} low stock</small>
+                                {% else %}
+                                <small class="text-success"><i data-feather="check-circle" class="me-1"></i>All in stock</small>
+                                {% endif %}
+                            </div>
+                            <div class="align-self-center text-center">
+                                <i data-feather="box" class="text-secondary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Users Card -->
+            <div class="col-sm-6 col-xxl-3 col-lg-6 mt-4">
+                <div class="b-b-success border-5 border-0 card o-hidden">
+                    <div class="custome-4-bg b-r-4 card-body">
+                        <div class="media static-top-widget">
+                            <div class="media-body p-0">
+                                <span class="m-0">Total Users</span>
+                                <h4 class="mb-0 counter">{{ total_user }}</h4>
+                                <small class="text-muted">Registered customers</small>
+                            </div>
+                            <div class="align-self-center text-center">
+                                <i data-feather="users" class="text-success"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats Row -->
+        <div class="row mt-4">
+            <div class="col-md-3 col-sm-6">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted mb-2">Pending Orders</h6>
+                        <h3 class="mb-0 text-warning">{{ pending_order }}</h3>
+                        <a href="{% url 'order_list' %}?status=Pending" class="btn btn-sm btn-outline-warning mt-2">View All</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted mb-2">Delivered</h6>
+                        <h3 class="mb-0 text-success">{{ delivered_order }}</h3>
+                        <a href="{% url 'order_list' %}?status=Delivered" class="btn btn-sm btn-outline-success mt-2">View All</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted mb-2">Cancelled</h6>
+                        <h3 class="mb-0 text-danger">{{ cancel_order }}</h3>
+                        <a href="{% url 'order_list' %}?status=Cancelled" class="btn btn-sm btn-outline-danger mt-2">View All</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted mb-2">Returns</h6>
+                        <h3 class="mb-0 text-info">{{ return_order }}</h3>
+                        <a href="{% url 'order_list' %}?status=Returned" class="btn btn-sm btn-outline-info mt-2">View All</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row mt-4">
+            <!-- Monthly Purchases Chart -->
+            <div class="col-xl-8">
+                <div class="card o-hidden">
+                    <div class="card-header border-0 pb-1">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="card-header-title">
+                                <h4>Monthly Purchases By Category</h4>
+                            </div>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-secondary active" onclick="filterChart('year')">Year</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="bar-chart-earning"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Status Pie Chart -->
+            <div class="col-xl-4">
+                <div class="card o-hidden">
+                    <div class="card-header border-0 pb-1">
+                        <div class="card-header-title">
+                            <h4>Order Status Overview</h4>
+                        </div>
+                    </div>
+                    <div class="card-body pt-0">
+                        <div class="pie-chart">
+                            <div id="pie-chart-orders"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Earning Chart -->
+        <div class="row mt-4">
+            <div class="col-xl-12">
+                <div class="card o-hidden">
+                    <div class="card-header border-0 pb-1">
+                        <div class="card-header-title">
+                            <h4>Monthly Earnings</h4>
+                            <p class="text-muted mb-0">Revenue trend for the current year</p>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="report-chart_"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Orders & Low Stock Row -->
+        <div class="row mt-4">
+            <!-- Recent Orders -->
+            <div class="col-xl-8">
+                <div class="card">
+                    <div class="card-header border-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="card-header-title">
+                                <h4>Recent Orders</h4>
+                            </div>
+                            <a href="{% url 'order_list' %}" class="btn btn-sm btn-primary">View All Orders</a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Customer</th>
+                                        <th>Date</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if recent_orders %}
+                                        {% for order in recent_orders %}
+                                        <tr>
+                                            <td><strong>#{{ order.order_id }}</strong></td>
+                                            <td>{{ order.user_id.user_name|default:"N/A" }}</td>
+                                            <td>{{ order.order_date|date:"M d, Y" }}</td>
+                                            <td>₹{{ order.total_amount|default:"0" }}</td>
+                                            <td>
+                                                {% if order.order_status == 'Pending' %}
+                                                    <span class="badge bg-warning">{{ order.order_status }}</span>
+                                                {% elif order.order_status == 'Delivered' %}
+                                                    <span class="badge bg-success">{{ order.order_status }}</span>
+                                                {% elif order.order_status == 'Cancelled' %}
+                                                    <span class="badge bg-danger">{{ order.order_status }}</span>
+                                                {% elif order.order_status == 'Returned' %}
+                                                    <span class="badge bg-info">{{ order.order_status }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ order.order_status }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'order_detail' order.id %}" class="btn btn-sm btn-outline-primary">
+                                                    <i data-feather="eye"></i> View
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted">No orders yet</td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Low Stock Alerts -->
+            <div class="col-xl-4">
+                <div class="card">
+                    <div class="card-header border-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="card-header-title">
+                                <h4>Low Stock Alert</h4>
+                            </div>
+                            {% if low_stock_count > 0 %}
+                            <span class="badge bg-warning">{{ low_stock_count }} items</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% if low_stock_products %}
+                            <div class="list-group">
+                                {% for item in low_stock_products %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ item.product.name }}</h6>
+                                            <small class="text-muted">{{ item.size.name }} - {{ item.color.name }}</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-danger">Stock: {{ item.stock_quantity }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <a href="{% url 'allproduct' %}" class="btn btn-sm btn-warning w-100 mt-3">
+                                <i data-feather="alert-triangle" class="me-1"></i> Manage Inventory
+                            </a>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i data-feather="check-circle" class="text-success" style="width: 48px; height: 48px;"></i>
+                                <p class="text-muted mt-3 mb-0">All products are in stock!</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Initialize feather icons
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+
+        // Order Status Pie Chart
+        var returnOrders = {{ return_order }};
+        var cancelOrders = {{ cancel_order }};
+        var deliveredOrders = {{ delivered_order }};
+        var pendingOrders = {{ pending_order }};
+
+        var orderPieOptions = {
+            series: [pendingOrders, deliveredOrders, cancelOrders, returnOrders],
+            labels: ['Pending', 'Delivered', 'Cancelled', 'Returned'],
+            chart: {
+                width: "100%",
+                height: 275,
+                type: 'donut',
+            },
+            legend: {
+                fontSize: '12px',
+                position: 'bottom',
+                offsetX: 1,
+                offsetY: -1,
+                markers: {
+                    width: 10,
+                    height: 10,
+                },
+                itemMargin: {
+                    vertical: 2
+                },
+            },
+            colors: ['#FFA500', '#00C853', '#FF1744', '#00E5FF'],
+            plotOptions: {
+                pie: {
+                    startAngle: -90,
+                    endAngle: 270
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: function (val) {
+                    return Math.round(val) + "%";
+                }
+            },
+            responsive: [{
+                breakpoint: 1835,
+                options: {
+                    chart: { height: 245 },
+                    legend: {
+                        position: 'bottom',
+                        itemMargin: { horizontal: 5, vertical: 1 }
+                    }
+                }
+            }]
+        };
+
+        var orderChart = new ApexCharts(document.querySelector("#pie-chart-orders"), orderPieOptions);
+        orderChart.render();
+
+        // Monthly Purchases by Category - Use real data
+        var manPurchasesMonthly = JSON.parse('{{ man_purchases_monthly|escapejs }}');
+        var womanPurchasesMonthly = JSON.parse('{{ woman_purchases_monthly|escapejs }}');
+        var kidsPurchasesMonthly = JSON.parse('{{ kids_purchases_monthly|escapejs }}');
+
+        var productSellChart = {
+            series: [
+                { name: "Man", data: manPurchasesMonthly },
+                { name: "Woman", data: womanPurchasesMonthly },
+                { name: "Kids", data: kidsPurchasesMonthly }
+            ],
+            chart: {
+                type: 'line',
+                height: 320,
+                toolbar: { show: false }
+            },
+            legend: {
+                show: true,
+                position: 'top',
+                horizontalAlign: 'right'
+            },
+            colors: ['#2483e2', '#FFC0CB', '#775DD0'],
+            markers: { size: 4 },
+            stroke: { width: 3, curve: 'smooth' },
+            xaxis: {
+                categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                labels: { show: true }
+            },
+            yaxis: {
+                title: { text: 'Quantity Sold' }
+            },
+            tooltip: {
+                shared: true,
+                intersect: false
+            },
+            responsive: [{
+                breakpoint: 1400,
+                options: { chart: { height: 300 } }
+            }, {
+                breakpoint: 992,
+                options: { chart: { height: 250 } }
+            }]
+        };
+
+        var productChart = new ApexCharts(document.querySelector("#bar-chart-earning"), productSellChart);
+        productChart.render();
+
+        // Monthly Earnings Chart - Use real data
+        var totalEarningMonthly = JSON.parse('{{ total_earning_Monthly|escapejs }}');
+        var xValues = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        var data = xValues.map((x, index) => ({ x: x, y: totalEarningMonthly[index] || 0 }));
+
+        var earningChartOptions = {
+            series: [{
+                name: 'Earnings (₹)',
+                data: data
+            }],
+            chart: {
+                height: 320,
+                type: 'bar',
+                toolbar: { show: true }
+            },
+            plotOptions: {
+                bar: {
+                    columnWidth: '50%',
+                    borderRadius: 5
+                }
+            },
+            colors: ['#e22454'],
+            dataLabels: {
+                enabled: true,
+                formatter: function (val) {
+                    return '₹' + Math.round(val);
+                }
+            },
+            xaxis: {
+                categories: xValues
+            },
+            yaxis: {
+                title: { text: 'Earnings (₹)' },
+                labels: {
+                    formatter: function (val) {
+                        return '₹' + Math.round(val);
+                    }
+                }
+            },
+            tooltip: {
+                y: {
+                    formatter: function (val) {
+                        return '₹' + Math.round(val);
+                    }
+                }
+            }
+        };
+
+        var earningChart = new ApexCharts(document.querySelector("#report-chart_"), earningChartOptions);
+        earningChart.render();
+    });
+</script>
+{% endblock %}
