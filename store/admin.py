@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import User
 from django.utils.html import format_html
 from django.urls import reverse
 from .models import (
@@ -174,3 +176,25 @@ class ReviewAdmin(admin.ModelAdmin):
     def disapprove_reviews(self, request, queryset):
         queryset.update(is_approved=False)
     disapprove_reviews.short_description = "Disapprove selected reviews"
+
+
+# Customize Django Admin Site
+admin.site.site_header = "Baabuu Clothing Admin"
+admin.site.site_title = "Baabuu Clothing Admin Portal"
+admin.site.index_title = "Welcome to Baabuu Clothing Administration"
+
+# Customize User Admin - Unregister default and register custom
+admin.site.unregister(User)
+
+@admin.register(User)
+class CustomUserAdmin(BaseUserAdmin):
+    list_display = ['username', 'email', 'first_name', 'last_name', 'is_staff', 'is_superuser', 'date_joined', 'last_login']
+    list_filter = ['is_staff', 'is_superuser', 'is_active', 'date_joined']
+    search_fields = ['username', 'email', 'first_name', 'last_name']
+    ordering = ['-date_joined']
+    
+    # Modify existing fieldsets instead of adding duplicates
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # The date_joined and last_login are already in the base fieldsets
+        # We just need to ensure they're visible, which they are by default

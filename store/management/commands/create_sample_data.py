@@ -5,7 +5,7 @@ import random
 
 
 class Command(BaseCommand):
-    help = 'Create sample data for the clothing store'
+    help = 'Create sample data for Baabuu Clothing'
 
     def add_arguments(self, parser):
         parser.add_argument(

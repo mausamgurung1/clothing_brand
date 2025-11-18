@@ -1,3 +1,10 @@
+"""
+Django REST Framework serializers for Baabuu Clothing
+
+Copyright (c) 2024 Baabuu Clothing
+Licensed under MIT License
+"""
+
 from rest_framework import serializers
 from .models import Product, Category, ProductImage, BlogPost
 
@@ -51,12 +58,30 @@ class ProductSerializer(serializers.ModelSerializer):
         read_only_fields = ['slug', 'sku', 'rating', 'review_count', 'created_at', 'updated_at']
     
     def get_main_image_url(self, obj):
+        request = self.context.get('request')
+        
         if obj.main_image:
-            request = self.context.get('request')
             if request:
                 return request.build_absolute_uri(obj.main_image.url)
             return obj.main_image.url
-        return obj.image_url or ''
+        
+        # Return image_url if it exists, ensuring it's a full URL
+        if obj.image_url:
+            if request:
+                # If image_url is a static path, make it absolute
+                if obj.image_url.startswith('/static/'):
+                    return request.build_absolute_uri(obj.image_url)
+                # If already absolute, return as is
+                if obj.image_url.startswith('http'):
+                    return obj.image_url
+                # Otherwise assume it's a media path
+                if obj.image_url.startswith('/media/'):
+                    return request.build_absolute_uri(obj.image_url)
+                return request.build_absolute_uri(f'/media/{obj.image_url}')
+            # Fallback: return as is if no request context
+            return obj.image_url
+        
+        return ''
     
     def get_discount_percentage(self, obj):
         return obj.get_discount_percentage()

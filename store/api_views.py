@@ -1,8 +1,19 @@
+"""
+Django REST Framework API views for Baabuu Clothing
+
+Copyright (c) 2024 Baabuu Clothing
+Licensed under MIT License
+"""
+
 from rest_framework import viewsets, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.shortcuts import get_object_or_404
+from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
+from rest_framework.authtoken.models import Token
 from .models import Product, Category, ProductImage, BlogPost
 from .serializers import (
     ProductSerializer, ProductCreateUpdateSerializer,
@@ -76,10 +87,20 @@ class ProductViewSet(viewsets.ModelViewSet):
     
     def list(self, request, *args, **kwargs):
         response = super().list(request, *args, **kwargs)
-        # Add image URLs to each product
-        for product_data in response.data['results']:
-            if 'main_image_url' not in product_data:
-                product_data['main_image_url'] = product_data.get('image_url', '')
+        # Ensure image URLs are properly formatted
+        for product_data in response.data.get('results', []):
+            # Fix main_image_url
+            if product_data.get('main_image_url') and not product_data['main_image_url'].startswith('http'):
+                if product_data['main_image_url'].startswith('/media/'):
+                    product_data['main_image_url'] = request.build_absolute_uri(product_data['main_image_url'])
+                else:
+                    product_data['main_image_url'] = request.build_absolute_uri(f"/media/{product_data['main_image_url']}")
+            # Fix image_url fallback
+            if not product_data.get('main_image_url') and product_data.get('image_url'):
+                if product_data['image_url'].startswith('/'):
+                    product_data['main_image_url'] = request.build_absolute_uri(product_data['image_url'])
+                else:
+                    product_data['main_image_url'] = product_data['image_url']
         return response
     
     @action(detail=True, methods=['post'], parser_classes=[MultiPartParser, FormParser])
@@ -160,4 +181,74 @@ class BlogPostViewSet(viewsets.ModelViewSet):
         instance.save(update_fields=['view_count'])
         serializer = self.get_serializer(instance, context={'request': request})
         return Response(serializer.data)
+
+
+# Authentication Views
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login_view(request):
+    """Login endpoint for admin panel"""
+    username = request.data.get('username')
+    password = request.data.get('password')
+    
+    if not username or not password:
+        return Response(
+            {'error': 'Username and password are required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    user = authenticate(username=username, password=password)
+    
+    if user is None:
+        return Response(
+            {'error': 'Invalid credentials'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    if not user.is_staff and not user.is_superuser:
+        return Response(
+            {'error': 'You do not have admin access'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    # Get or create token
+    token, created = Token.objects.get_or_create(user=user)
+    
+    return Response({
+        'token': token.key,
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'is_staff': user.is_staff,
+            'is_superuser': user.is_superuser,
+        }
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout_view(request):
+    """Logout endpoint - delete token"""
+    try:
+        request.user.auth_token.delete()
+    except:
+        pass
+    return Response({'message': 'Logged out successfully'})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def check_auth_view(request):
+    """Check if user is authenticated"""
+    return Response({
+        'authenticated': True,
+        'user': {
+            'id': request.user.id,
+            'username': request.user.username,
+            'email': request.user.email,
+            'is_staff': request.user.is_staff,
+            'is_superuser': request.user.is_superuser,
+        }
+    })
 

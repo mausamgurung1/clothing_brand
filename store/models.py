@@ -1,3 +1,10 @@
+"""
+Django models for Baabuu Clothing application
+
+Copyright (c) 2024 Baabuu Clothing
+Licensed under MIT License
+"""
+
 from django.db import models
 from django.urls import reverse
 from django.core.validators import MinValueValidator, MaxValueValidator

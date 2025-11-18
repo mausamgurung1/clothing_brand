@@ -28,3 +28,13 @@ urlpatterns = [
 # Serve media files in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# Favicon handler
+from django.views.generic import RedirectView
+urlpatterns += [
+    path('favicon.ico', RedirectView.as_view(url='/static/images/icons/favicon.png', permanent=True)),
+    # Redirect /admin/user/ to /admin/auth/user/ (correct Django admin URL)
+    path('admin/user/', RedirectView.as_view(url='/admin/auth/user/', permanent=True)),
+    path('admin/user', RedirectView.as_view(url='/admin/auth/user/', permanent=True)),
+]

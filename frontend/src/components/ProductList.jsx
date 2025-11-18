@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { productsAPI } from '../services/api';
+import { getProductImageUrl } from '../utils/imageUtils';
 
 const ProductList = ({ onEdit, onDelete }) => {
   const [products, setProducts] = useState([]);
@@ -47,11 +48,25 @@ const ProductList = ({ onEdit, onDelete }) => {
         {products.map(product => (
           <div key={product.id} className="product-card">
             <div className="product-image">
-              {product.main_image_url ? (
-                <img src={product.main_image_url} alt={product.name} />
-              ) : (
-                <div className="no-image">No Image</div>
-              )}
+              {getProductImageUrl(product) ? (
+                <img 
+                  src={getProductImageUrl(product)} 
+                  alt={product.name}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    const placeholder = e.target.nextSibling;
+                    if (placeholder) {
+                      placeholder.style.display = 'flex';
+                    }
+                  }}
+                />
+              ) : null}
+              <div 
+                className="no-image" 
+                style={{display: getProductImageUrl(product) ? 'none' : 'flex'}}
+              >
+                No Image
+              </div>
               {product.is_hot && <span className="badge hot">HOT</span>}
               {product.is_featured && <span className="badge featured">Featured</span>}
               {product.discount_percentage > 0 && (

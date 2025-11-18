@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { productsAPI, categoriesAPI } from '../services/api';
+import { getProductImageUrl } from '../utils/imageUtils';
 
 const ProductForm = ({ product, onSuccess, onCancel }) => {
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm({
@@ -31,8 +32,13 @@ const ProductForm = ({ product, onSuccess, onCancel }) => {
 
   useEffect(() => {
     loadCategories();
-    if (product?.main_image_url) {
-      setImagePreview(product.main_image_url);
+    if (product) {
+      // Set image preview from product using dynamic URL
+      if (product.main_image_url) {
+        setImagePreview(getProductImageUrl(product));
+      } else if (product.image_url) {
+        setImagePreview(getProductImageUrl(product));
+      }
     }
   }, [product]);
 
@@ -181,7 +187,13 @@ const ProductForm = ({ product, onSuccess, onCancel }) => {
           />
           {imagePreview && (
             <div className="image-preview">
-              <img src={imagePreview} alt="Preview" />
+              <img 
+                src={imagePreview} 
+                alt="Preview"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
             </div>
           )}
         </div>
