@@ -12,6 +12,7 @@ from django.db.models import Sum, Q, Count, F
 from django.db.models.functions import TruncMonth
 from datetime import datetime, timedelta
 import json
+import requests
 
 
 # Create your views here.
@@ -19,23 +20,50 @@ import json
 
 # Save Image To Another Server
 def save_img_to_another_server(file_obj, text):
+    """
+    Upload image to external server
+    Returns the image URL on success, empty string on failure
+    """
+    if not file_obj or not text:
+        return ''
+    
     url = "https://images.prathmeshsoni.works/images/?format=json"
 
-    files=[
-        # ('file',('demo.png',open('demo.png','rb'),'image/png'))
-        ('file', (file_obj.name, text, file_obj.content_type))
-    ]
-    headers = {
-        'Authorization': 'token 9202c558d91744d146cf96f4f9bf464240acfbb9',
-        'Origin': 'https://images.prathmeshsoni.works',
-        'Referer': f'{url}',
-    }
-
-    response = requests.request("POST", url, headers=headers, data={}, files=files)
     try:
-        json_data = response.json()
-        return json_data['file']
-    except:
+        files = [
+            ('file', (file_obj.name, text, file_obj.content_type or 'image/jpeg'))
+        ]
+        headers = {
+            'Authorization': 'token 9202c558d91744d146cf96f4f9bf464240acfbb9',
+            'Origin': 'https://images.prathmeshsoni.works',
+            'Referer': url,
+        }
+
+        response = requests.post(url, headers=headers, data={}, files=files, timeout=30)
+        response.raise_for_status()  # Raise exception for bad status codes
+        
+        try:
+            json_data = response.json()
+            print(f"Full JSON response from image server: {json_data}")
+            if 'file' in json_data:
+                image_url = json_data['file']
+                # Log the returned URL for debugging
+                print(f"Image upload successful. Server returned URL: {image_url}")
+                print(f"URL type: {type(image_url)}, Length: {len(str(image_url))}")
+                return image_url
+            else:
+                print(f"Image upload response missing 'file' key. Available keys: {list(json_data.keys())}")
+                print(f"Full response: {json_data}")
+                return ''
+        except ValueError as e:
+            print(f"Error parsing JSON response: {e}")
+            print(f"Response content: {response.text[:200]}")
+            return ''
+    except requests.exceptions.RequestException as e:
+        print(f"Error uploading image to server: {e}")
+        return ''
+    except Exception as e:
+        print(f"Unexpected error in image upload: {e}")
         return ''
 
 
@@ -58,16 +86,62 @@ def add_product(request):
             images = request.FILES.get('images')
 
             productsize = request.POST.getlist('productsize')
-            url = save_img_to_another_server(images, images.file.read())
 
-            if not product or not description or not images or not productsize:
-                messages.error(request, 'Please enter all fields')
+            if not product or not description or not productsize:
+                messages.error(request, 'Please enter all required fields')
                 return redirect('add_product')
             
+            if not images:
+                messages.error(request, 'Please select an image')
+                return redirect('add_product')
+            
+            # Validate image file
+            if images.size > 10 * 1024 * 1024:  # 10MB limit
+                messages.error(request, 'Image file is too large. Maximum size is 10MB')
+                return redirect('add_product')
+            
+            # Validate image type
+            allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+            if images.content_type not in allowed_types:
+                messages.error(request, 'Invalid image format. Please upload JPEG, PNG, GIF, or WebP')
+                return redirect('add_product')
+            
+            # Read image file content
+            try:
+                if hasattr(images, 'read'):
+                    image_content = images.read()
+                    # Reset file pointer for potential re-reading
+                    if hasattr(images, 'seek'):
+                        images.seek(0)
+                else:
+                    messages.error(request, 'Error reading image file')
+                    return redirect('add_product')
+            except Exception as e:
+                messages.error(request, f'Error reading image file: {str(e)}')
+                return redirect('add_product')
+            
+            # Upload image to external server
+            url = save_img_to_another_server(images, image_content)
+            
+            if not url or url.strip() == '':
+                messages.error(request, 'Failed to upload image. Please try again.')
+                return redirect('add_product')
 
-            subproduct_obj = SubProduct.objects.create(product_id=product, description=description, image=url)
+            # Ensure the URL is stored correctly
+            # If the server returns a full URL, use it; otherwise prepend the base URL
+            if not url.startswith('http'):
+                # If it's a relative path starting with images/, prepend the server URL
+                if url.startswith('images/'):
+                    image_url = f'https://images.prathmeshsoni.works/{url}'
+                else:
+                    image_url = url
+            else:
+                image_url = url
+
+            subproduct_obj = SubProduct.objects.create(product_id=product, description=description, image=image_url)
             subproduct_obj.product_size_color.set(productsize)
             subproduct_obj.save()
+            messages.success(request, f'Product added successfully! Image URL: {image_url[:50]}...')
         elif 'size_form' in request.POST:
             product = request.POST.get('product')
             size = request.POST.get('sizes')
@@ -122,13 +196,26 @@ def edit_product(request, id):
         description = request.POST.get('description')
         productsize = request.POST.getlist('productsize')
         image = request.FILES.get('images')
+        remove_image = request.POST.get('remove_image', '0') == '1'
+        image_updated = False
+        image_url_saved = ''
 
         # Validate required fields first
         if not description or not productsize:
             messages.error(request, 'Please enter all required fields')
             return redirect('edit_product', id=id)
 
-        # Handle image upload if provided
+        # Handle image removal if requested
+        if remove_image:
+            product.image = ''
+            from django.utils import timezone
+            product.updated_at = timezone.now()
+            product.save()
+            product.refresh_from_db()
+            print(f"Image removed for product {product.id}")
+            messages.success(request, 'Product image removed successfully!')
+        
+        # Handle image upload if provided (this will override remove if both are set)
         if image is not None and image.size > 0:
             try:
                 # Read the file content
@@ -152,8 +239,37 @@ def edit_product(request, id):
                 
                 # Only update image if upload was successful
                 if url and url.strip() and url != '':
-                    product.image = url
+                    # Ensure the URL is stored correctly
+                    # If the server returns a full URL, use it; otherwise prepend the base URL
+                    if not url.startswith('http'):
+                        # If it's a relative path starting with images/, prepend the server URL
+                        if url.startswith('images/'):
+                            image_url = f'https://images.prathmeshsoni.works/{url}'
+                        else:
+                            image_url = url
+                    else:
+                        image_url = url
+                    
+                    old_image = product.image
+                    product.image = image_url
+                    # Force update the updated_at timestamp for cache-busting
+                    from django.utils import timezone
+                    product.updated_at = timezone.now()
+                    product.save()
+                    product.refresh_from_db()
+                    
+                    # Verify the save
+                    verify_product = SubProduct.objects.get(id=product.id)
+                    print(f"Image updated in edit_product for product {product.id}:")
+                    print(f"  Old URL: {old_image}")
+                    print(f"  New URL: {verify_product.image}")
+                    print(f"  Updated at: {verify_product.updated_at}")
+                    print(f"  Verification: URLs match = {verify_product.image == image_url}")
+                    
+                    image_updated = True
+                    image_url_saved = image_url
                     messages.success(request, 'Product image updated successfully!')
+                    messages.info(request, f'New image URL: {image_url[:80]}...')
                 else:
                     messages.warning(request, 'Image upload failed. Please try again or keep existing image.')
             except Exception as e:
@@ -167,9 +283,17 @@ def edit_product(request, id):
         product.description = description
         size = productsize + list(size_color)   
         product.product_size_color.set(size)
+        
+        # Refresh product from database to get latest image and updated_at after POST
+        product.refresh_from_db()
         product.save()
         
         messages.success(request, 'Product updated successfully!')
+        
+        # If image was updated, redirect back to edit page to show new image
+        if image_updated and image_url_saved:
+            return redirect('edit_product', id=id)
+        
         return redirect('allproduct')
     
     
@@ -203,28 +327,152 @@ def edit_quantity(request,id):
         size_id = request.POST.get('sizes')
         color_id = request.POST.get('colors')
         stock_quantity = request.POST.get('stock')
-        # print(product_id)
-        # print(size_id)
-        # print(color_id)
-        # print(stock_quantity)
-        if not product_id or not size_id or not color_id or not stock_quantity:
-            messages.error(request, 'Please enter all fields')
+        image = request.FILES.get('images')
+        remove_image = request.POST.get('remove_image', '0') == '1'
+        
+        # Handle image removal ONLY if no new image is being uploaded
+        # If both remove and upload are selected, upload takes precedence (don't remove)
+        image_uploaded = False
+        if remove_image and (image is None or image.size == 0):
+            product.image = ''
+            from django.utils import timezone
+            product.updated_at = timezone.now()
+            product.save()
+            product.refresh_from_db()
+            print(f"Image removed for product {product.id}")
+            messages.success(request, 'Product image removed successfully!')
+        
+        # Handle image upload if provided (this will override remove if both are set)
+        if image is not None and image.size > 0:
+            try:
+                # Validate image file
+                if image.size > 10 * 1024 * 1024:  # 10MB limit
+                    messages.error(request, 'Image file is too large. Maximum size is 10MB')
+                    return redirect('edit_quantity', id=id)
+                
+                # Validate image type
+                allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+                if image.content_type not in allowed_types:
+                    messages.error(request, 'Invalid image format. Please upload JPEG, PNG, GIF, or WebP')
+                    return redirect('edit_quantity', id=id)
+                
+                # Read image file content
+                if hasattr(image, 'read'):
+                    image_content = image.read()
+                    # Reset file pointer for potential re-reading
+                    if hasattr(image, 'seek'):
+                        image.seek(0)
+                else:
+                    messages.error(request, 'Error reading image file')
+                    return redirect('edit_quantity', id=id)
+                
+                # Upload image to external server
+                url = save_img_to_another_server(image, image_content)
+                
+                # Only update image if upload was successful
+                if url and url.strip() and url != '':
+                    old_image = product.image
+                    # Ensure the URL is stored correctly
+                    # If the server returns a full URL, use it; otherwise prepend the base URL
+                    if not url.startswith('http'):
+                        # If it's a relative path starting with images/, prepend the server URL
+                        if url.startswith('images/'):
+                            image_url = f'https://images.prathmeshsoni.works/{url}'
+                        else:
+                            image_url = url
+                    else:
+                        image_url = url
+                    
+                    # Update the product image
+                    product.image = image_url
+                    # Force update the updated_at timestamp for cache-busting
+                    from django.utils import timezone
+                    product.updated_at = timezone.now()
+                    product.save()
+                    # Force refresh to ensure it's persisted
+                    product.refresh_from_db()
+                    
+                    # Verify the save
+                    verify_product = SubProduct.objects.get(id=product.id)
+                    print(f"Image updated for product {product.id}:")
+                    print(f"  Old URL: {old_image}")
+                    print(f"  New URL: {verify_product.image}")
+                    print(f"  Updated at: {verify_product.updated_at}")
+                    print(f"  Verification: URLs match = {verify_product.image == image_url}")
+                    
+                    image_uploaded = True
+                    messages.success(request, f'Product image updated successfully!')
+                    messages.info(request, f'New image URL: {image_url[:80]}...')
+                else:
+                    print(f"Image upload failed for product {product.id}: Empty URL returned")
+                    print(f"Server response URL: {url if url else 'None'}")
+                    messages.warning(request, 'Image upload failed. Please try again or keep existing image.')
+            except Exception as e:
+                import traceback
+                print(f"Error uploading image: {str(e)}")
+                print(traceback.format_exc())
+                messages.error(request, f'Error uploading image: {str(e)}')
+                # Keep existing image if upload fails
+        
+        # Check if only image was updated/removed (no stock fields provided)
+        image_only_update = (image_uploaded or remove_image) and (not product_id or not size_id or not color_id or not stock_quantity)
+        
+        # If only image was updated/removed, redirect to show the change
+        if image_only_update:
+            if image_uploaded:
+                messages.info(request, 'Image updated successfully! If you want to update stock, please fill in all stock fields.')
+            elif remove_image:
+                messages.info(request, 'Image removed successfully! If you want to update stock, please fill in all stock fields.')
             return redirect('edit_quantity', id=id)
-        # elif size_id
+        
+        # If stock fields are provided, validate and update stock
+        if not product_id or not size_id or not color_id or not stock_quantity:
+            messages.error(request, 'Please enter all fields (size, color, and stock quantity)')
+            return redirect('edit_quantity', id=id)
+        
+        # Validate stock quantity is a positive integer
+        try:
+            stock_quantity = int(stock_quantity)
+            if stock_quantity < 0:
+                messages.error(request, 'Stock quantity must be a positive number')
+                return redirect('edit_quantity', id=id)
+        except ValueError:
+            messages.error(request, 'Stock quantity must be a valid number')
+            return redirect('edit_quantity', id=id)
+        
+        try:
+            size_obj = Size.objects.get(id=size_id)
+            color_obj = Color.objects.get(id=color_id)
+        except (Size.DoesNotExist, Color.DoesNotExist):
+            messages.error(request, 'Invalid size or color selected')
+            return redirect('edit_quantity', id=id)
+        
         try:
             stock_obj = ProductSizeNColor.objects.get(product_id=product_id, size_id=size_id, color_id=color_id)
+            old_stock = stock_obj.stock_quantity
             stock_obj.stock_quantity = stock_quantity
             stock_obj.save()
+            messages.success(request, f'Stock updated successfully! {size_obj.name} / {color_obj.name}: {old_stock} → {stock_quantity}')
         except ProductSizeNColor.DoesNotExist:
             stock_obj = ProductSizeNColor.objects.create(product_id=product_id, size_id=size_id, color_id=color_id, stock_quantity=stock_quantity)
             stock_obj.save()
-        
+            messages.success(request, f'New stock entry created! {size_obj.name} / {color_obj.name}: {stock_quantity}')
+    
+    # Refresh product from database to get latest image and updated_at after POST
+    if request.method == 'POST':
+        product.refresh_from_db()
+        # Re-fetch related data
+        sizeandcolor = ProductSizeNColor.objects.filter(product=product.product_id)
+        unique_sizes = [size.size for size in sizeandcolor]
+        sizes = set(unique_sizes)
+        unique_colors = [color.color for color in sizeandcolor]
+        colors = set(unique_colors)
+    
     context = {
-        'product':product,
-        'sizeandcolor':sizeandcolor,
-        'sizes':sizes,
-        'colors':colors,
-
+        'product': product,
+        'sizeandcolor': sizeandcolor,
+        'sizes': sizes,
+        'colors': colors,
     }
 
     return render(request, 'edit_quantity.html', context)
@@ -342,19 +590,26 @@ def remove_products(request, id):
 @login_required(login_url='/admin/login/?next=/admin_side/')
 def product_list(request):
     # Get all products with their stock information
-    products = Product.objects.all().order_by('-created_at').prefetch_related('subproduct_set', 'product_size_color_set')
+    products = Product.objects.all().order_by('-created_at').prefetch_related('subproduct_set')
     
     # Add stock information to each product
     product_list_with_stock = []
     for product in products:
         # Get all subproducts for this product
         subproducts = product.subproduct_set.all()
+        
+        # Get all ProductSizeNColor objects for this product using reverse ForeignKey relation
+        # Django auto-generates reverse relation as productsizencolor_set (all lowercase)
+        size_color_combos = product.productsizencolor_set.all()
+        
         # Calculate total stock across all size/color combinations
-        total_stock = product.product_size_color_set.aggregate(total=Sum('stock_quantity'))['total'] or 0
-        # Get low stock count
-        low_stock_count = product.product_size_color_set.filter(stock_quantity__lt=10).count()
-        # Get out of stock count
-        out_of_stock_count = product.product_size_color_set.filter(stock_quantity=0).count()
+        total_stock = size_color_combos.aggregate(total=Sum('stock_quantity'))['total'] or 0
+        
+        # Get low stock count (stock < 10 but > 0)
+        low_stock_count = size_color_combos.filter(stock_quantity__lt=10, stock_quantity__gt=0).count()
+        
+        # Get out of stock count (stock = 0)
+        out_of_stock_count = size_color_combos.filter(stock_quantity=0).count()
         
         product_list_with_stock.append({
             'product': product,
@@ -427,12 +682,22 @@ def contact_list(request):
 
 @login_required(login_url='/admin/login/?next=/admin_side/')
 def order_detail(request, order_id):
-    order = get_object_or_404(placeOrder, order_id=order_id)
+    try:
+        # First try to find by order_id field
+        order = placeOrder.objects.get(order_id=order_id)
+    except placeOrder.DoesNotExist:
+        # If not found by order_id, try by primary key (for backward compatibility)
+        try:
+            order = placeOrder.objects.get(id=order_id)
+        except placeOrder.DoesNotExist:
+            messages.error(request, f'Order #{order_id} not found.')
+            return redirect('order_list')
+    
     order_items = sub_placeorder.objects.filter(order_id=order)
   
     subtotal = sum([item.subproduct_id.product.price * item.quantity for item in order_items])
-    shipping_charge = 50
-    total = subtotal + shipping_charge
+    shipping_charge = order.shipping_charge if order.shipping_charge else 50
+    total = order.total_amount if order.total_amount else (subtotal + shipping_charge)
 
     context = {
         'order': order,
@@ -446,8 +711,20 @@ def order_detail(request, order_id):
 
 @login_required(login_url='/admin/login/?next=/admin_side/')
 def order_delete(request, order_id):
-    order = get_object_or_404(placeOrder, order_id=order_id)
+    try:
+        # First try to find by order_id field
+        order = placeOrder.objects.get(order_id=order_id)
+    except placeOrder.DoesNotExist:
+        # If not found by order_id, try by primary key
+        try:
+            order = placeOrder.objects.get(id=order_id)
+        except placeOrder.DoesNotExist:
+            messages.error(request, f'Order #{order_id} not found.')
+            return redirect('order_list')
+    
+    order_id_value = order.order_id  # Store before deletion
     order.delete()
+    messages.success(request, f'Order #{order_id_value} has been deleted successfully.')
     return redirect('order_list')
 
 
@@ -457,7 +734,19 @@ def update_order_status(request, order_id):
     """Update order status"""
     if request.method == 'POST':
         try:
-            order = get_object_or_404(placeOrder, order_id=order_id)
+            # First try to find by order_id field
+            try:
+                order = placeOrder.objects.get(order_id=order_id)
+            except placeOrder.DoesNotExist:
+                # If not found by order_id, try by primary key
+                try:
+                    order = placeOrder.objects.get(id=order_id)
+                except placeOrder.DoesNotExist:
+                    messages.error(request, f'Order #{order_id} not found.')
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return JsonResponse({'success': False, 'message': f'Order #{order_id} not found.'}, status=404)
+                    return redirect('order_list')
+            
             new_status = request.POST.get('status')
             
             # Validate status

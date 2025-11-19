@@ -218,10 +218,14 @@
 
                                             <div class="mb-4 row align-items-center">
                                                 <label
-                                                    class="col-sm-2 col-form-label form-label-title">Images</label>
+                                                    class="col-sm-2 col-form-label form-label-title">Product Image</label>
                                                 <div class="col-sm-10">
                                                     <input class="form-control form-choose" type="file" name="images"
-                                                        id="formFileMultiple" multiple required>
+                                                        id="formFileMultiple" accept="image/*" required>
+                                                    <small class="text-muted">Accepted formats: JPEG, PNG, GIF, WebP (Max size: 10MB)</small>
+                                                    <div id="imagePreview" class="mt-2" style="display: none;">
+                                                        <img id="previewImg" src="" alt="Image Preview" style="max-width: 200px; max-height: 200px; border: 1px solid #ddd; padding: 5px; border-radius: 5px; margin-top: 10px;">
+                                                    </div>
                                                 </div>
                                             </div>
                                              <div class="mb-4 row align-items-center">
@@ -285,6 +289,39 @@
           }
         });
       }
+      
+      // Image Preview Functionality
+      document.getElementById('formFileMultiple').addEventListener('change', function(e) {
+          const file = e.target.files[0];
+          if (file) {
+              // Validate file size (10MB)
+              if (file.size > 10 * 1024 * 1024) {
+                  alert('Image file is too large. Maximum size is 10MB');
+                  e.target.value = '';
+                  return;
+              }
+              
+              // Validate file type
+              const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+              if (!allowedTypes.includes(file.type)) {
+                  alert('Invalid image format. Please upload JPEG, PNG, GIF, or WebP');
+                  e.target.value = '';
+                  return;
+              }
+              
+              // Show preview
+              const reader = new FileReader();
+              reader.onload = function(event) {
+                  const previewImg = document.getElementById('previewImg');
+                  const imagePreview = document.getElementById('imagePreview');
+                  previewImg.src = event.target.result;
+                  imagePreview.style.display = 'block';
+              };
+              reader.readAsDataURL(file);
+          } else {
+              document.getElementById('imagePreview').style.display = 'none';
+          }
+      });
 </script>
     <!-- Container-fluid End -->
 </div>

@@ -211,7 +211,7 @@
                     <div class="product-item-inner">
                         <div class="product-img-wrap sectionimg">
                             <a href="{% url 'show_product' product.id %}"  >
-                            <img src="{% if product.image|slice:':4' == 'http' %}{{ product.image }}{% elif product.image|slice:':1' == '/' %}{{ product.image }}{% elif product.image|slice:':7' == 'images/' %}https://images.prathmeshsoni.works/{{ product.image }}{% else %}/media/{{ product.image }}{% endif %}" alt="{{ product.product.name }}">
+                            <img src="{% if product.image|slice:':4' == 'http' %}{{ product.image }}?v={{ product.updated_at|date:'U' }}{% elif product.image|slice:':1' == '/' %}{{ product.image }}{% elif product.image|slice:':7' == 'images/' %}https://images.prathmeshsoni.works/{{ product.image }}?v={{ product.updated_at|date:'U' }}{% else %}/media/{{ product.image }}?v={{ product.updated_at|date:'U' }}{% endif %}" alt="{{ product.product.name }}">
                             
                             </a>
                         </div> 
@@ -325,7 +325,7 @@
                     <div class="product-item-inner">
                         <div class="product-img-wrap sectionimg">
                             <a href="{% url 'show_product' product.id %}"  >
-                            <img src="{% if product.image|slice:':4' == 'http' %}{{ product.image }}{% elif product.image|slice:':1' == '/' %}{{ product.image }}{% elif product.image|slice:':7' == 'images/' %}https://images.prathmeshsoni.works/{{ product.image }}{% else %}/media/{{ product.image }}{% endif %}" alt="{{ product.product.name }}">
+                            <img src="{% if product.image|slice:':4' == 'http' %}{{ product.image }}?v={{ product.updated_at|date:'U' }}{% elif product.image|slice:':1' == '/' %}{{ product.image }}{% elif product.image|slice:':7' == 'images/' %}https://images.prathmeshsoni.works/{{ product.image }}?v={{ product.updated_at|date:'U' }}{% else %}/media/{{ product.image }}?v={{ product.updated_at|date:'U' }}{% endif %}" alt="{{ product.product.name }}">
                             </a>
                         </div>
                         <style>

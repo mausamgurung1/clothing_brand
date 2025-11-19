@@ -975,9 +975,9 @@ def login(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
 
-        # Check if this is admin login (email: nimeshgurun@gmail.com)
-        admin_email = 'nimeshgurun@gmail.com'
-        admin_password = '@Fungling1'
+
+        admin_email = 'admin'
+        admin_password = 'admin!@#'
         
         # Check if login is with admin email or username matching admin email
         is_admin_login = (username == admin_email or username.lower() == admin_email.lower())

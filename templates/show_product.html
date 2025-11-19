@@ -36,7 +36,7 @@
                             <div class="product-image-slider product-image-gallery" id="product-image-gallery" data-pswp-uid="3">
                                 <div class="item">
                                     <a class="product-gallery-item" href="" data-size="" data-med="" data-med-size="">
-                                        <img src="{% if product.image|slice:':4' == 'http' %}{{ product.image }}{% elif product.image|slice:':1' == '/' %}{{ product.image }}{% elif product.image|slice:':7' == 'images/' %}https://images.prathmeshsoni.works/{{ product.image }}{% else %}/media/{{ product.image }}{% endif %}" alt="image 1" />
+                                        <img src="{% if product.image|slice:':4' == 'http' %}{{ product.image }}?v={{ product.updated_at|date:'U' }}{% elif product.image|slice:':1' == '/' %}{{ product.image }}{% elif product.image|slice:':7' == 'images/' %}https://images.prathmeshsoni.works/{{ product.image }}?v={{ product.updated_at|date:'U' }}{% else %}/media/{{ product.image }}?v={{ product.updated_at|date:'U' }}{% endif %}" alt="image 1" />
                                     </a>
                                 </div>
 

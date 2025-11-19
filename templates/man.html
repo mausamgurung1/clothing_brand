@@ -188,7 +188,7 @@
                                     <div class="product-item-inner">
                                         <div class="product-img-wrap sectionimg">
                                             <a href="{% url 'show_product' pro.id %}"  >
-                                            <img src="{% if pro.image|slice:':4' == 'http' %}{{ pro.image }}{% elif pro.image|slice:':1' == '/' %}{{ pro.image }}{% elif pro.image|slice:':7' == 'images/' %}https://images.prathmeshsoni.works/{{ pro.image }}{% else %}/media/{{ pro.image }}{% endif %}"  alt="">
+                                            <img src="{% if pro.image|slice:':4' == 'http' %}{{ pro.image }}?v={{ pro.updated_at|date:'U' }}{% elif pro.image|slice:':1' == '/' %}{{ pro.image }}{% elif pro.image|slice:':7' == 'images/' %}https://images.prathmeshsoni.works/{{ pro.image }}?v={{ pro.updated_at|date:'U' }}{% else %}/media/{{ pro.image }}?v={{ pro.updated_at|date:'U' }}{% endif %}"  alt="">
                                         </a>
                                         </div>
 
