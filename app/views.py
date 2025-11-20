@@ -148,6 +148,136 @@ def contact(request):
     return render(request, 'contact.html',context)
 
 
+# ===============================================================================================================
+# Messaging/Chat Views
+# ===============================================================================================================
+
+def send_message(request):
+    """Send a message from user to admin"""
+    if request.method == 'POST':
+        try:
+            message_text = request.POST.get('message', '').strip()
+            
+            if not message_text:
+                return JsonResponse({'success': False, 'message': 'Message cannot be empty'})
+            
+            # Get user info from session - session stores user ID as integer
+            user_id = request.session.get('user')
+            user = None
+            sender_name = None
+            sender_email = None
+            
+            # Check if user is logged in
+            if user_id:
+                try:
+                    user = User.objects.get(pk=user_id)
+                    sender_name = user.name or user.user_name
+                    sender_email = user.user_email
+                except (User.DoesNotExist, TypeError, ValueError):
+                    # Invalid user ID, treat as guest
+                    user = None
+            
+            # If not logged in, get from form
+            if not user:
+                sender_name = request.POST.get('sender_name', 'Guest')
+                sender_email = request.POST.get('sender_email', '')
+            
+            # Create message
+            message_obj = Message.objects.create(
+                user=user,
+                sender_name=sender_name,
+                sender_email=sender_email,
+                message=message_text,
+                is_from_user=True,
+                is_seen=False,
+                reply_seen=False
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Message sent successfully!',
+                'message_id': message_obj.id,
+                'created_at': message_obj.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            })
+            
+        except Exception as e:
+            print(f"Error sending message: {e}")
+            import traceback
+            print(traceback.format_exc())
+            return JsonResponse({'success': False, 'message': f'Error sending message: {str(e)}'})
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+def get_messages(request):
+    """Get messages for the current user"""
+    try:
+        # Get user ID from session - session stores user ID as integer
+        user_id = request.session.get('user')
+        user = None
+        
+        # Check if user is logged in
+        if user_id:
+            try:
+                user = User.objects.get(pk=user_id)
+            except (User.DoesNotExist, TypeError, ValueError):
+                # Invalid user ID, treat as guest
+                user = None
+        
+        if user:
+            # User is logged in, get their messages
+            messages = Message.objects.filter(user=user).order_by('created_at')
+        else:
+            # Guest user, get messages by email/name
+            sender_email = request.GET.get('sender_email', '')
+            sender_name = request.GET.get('sender_name', 'Guest')
+            if sender_email:
+                messages = Message.objects.filter(
+                    sender_email=sender_email,
+                    sender_name=sender_name,
+                    user__isnull=True
+                ).order_by('created_at')
+            else:
+                # No email provided, return empty
+                messages = Message.objects.none()
+        
+        messages_list = []
+        for msg in messages:
+            messages_list.append({
+                'id': msg.id,
+                'message': msg.message,
+                'reply': msg.reply or '',
+                'is_from_user': msg.is_from_user,
+                'is_seen': msg.is_seen,
+                'reply_seen': msg.reply_seen,
+                'created_at': msg.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'has_reply': bool(msg.reply)
+            })
+        
+        return JsonResponse({'success': True, 'messages': messages_list})
+        
+    except Exception as e:
+        print(f"Error getting messages: {e}")
+        import traceback
+        print(traceback.format_exc())
+        return JsonResponse({'success': False, 'message': f'Error getting messages: {str(e)}'})
+
+
+def mark_reply_as_seen(request, message_id):
+    """Mark admin reply as seen by user"""
+    if request.method == 'POST':
+        try:
+            message = Message.objects.get(pk=message_id)
+            message.mark_reply_as_seen()
+            return JsonResponse({'success': True, 'message': 'Reply marked as seen'})
+        except Message.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Message not found'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
 def about(request):
     context = check_user(request)
     return render(request, 'about.html', context)

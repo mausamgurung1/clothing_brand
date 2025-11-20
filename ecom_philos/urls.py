@@ -51,7 +51,21 @@ urlpatterns = [
     path('order_list/', order_list, name='order_list'),
     path('user_list/', user_list, name='user_list'),
     path('product_list/', product_list, name='product_list'),
+    path('product_variants/<int:product_id>/', product_variants, name='product_variants'),
+    path('variant_list/', variant_list, name='variant_list'),
     path('contact_list/', contact_list, name='contact_list'),
+    
+    # Message/Chat URLs
+    path('message_list/', message_list, name='message_list'),
+    path('message_detail/<int:message_id>/', message_detail, name='message_detail'),
+    path('reply_message_ajax/<int:message_id>/', reply_message_ajax, name='reply_message_ajax'),
+    path('mark_message_seen_ajax/<int:message_id>/', mark_message_seen_ajax, name='mark_message_seen_ajax'),
+    path('get_unread_count/', get_unread_count, name='get_unread_count'),
+    
+    # User message URLs
+    path('send_message/', send_message, name='send_message'),
+    path('get_messages/', get_messages, name='get_messages'),
+    path('mark_reply_as_seen/<int:message_id>/', mark_reply_as_seen, name='mark_reply_as_seen'),
     
     path('order_detail/<int:order_id>', order_detail, name='order_detail'),
     path('order_delete/<int:order_id>', order_delete, name='order_delete'),

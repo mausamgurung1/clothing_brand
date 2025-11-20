@@ -9,6 +9,7 @@ admin.site.register(AddressModel)
 admin.site.register(placeOrder)
 admin.site.register(sub_placeorder)
 admin.site.register(Contact)
+admin.site.register(Message)
 
 admin.site.site_header = 'StyleX Admin'
 

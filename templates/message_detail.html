@@ -1,0 +1,165 @@
+{% extends 'admin_layout.html' %}
+{% load static %}
+
+{% block title %}Message Detail {% endblock %}
+
+{% block body %}
+
+<div class="page-body-wrapper">
+    <div class="page-body">
+        <div class="title-header">
+            <h5>Message Detail</h5>
+            <a href="{% url 'message_list' %}" class="btn btn-primary btn-sm">
+                <i class="fa fa-arrow-left"></i> Back to Messages
+            </a>
+        </div>
+
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-8 mx-auto">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0">
+                                <i class="fa fa-user me-2"></i>
+                                {{ message_obj.user.user_name|default:message_obj.sender_name|default:"Guest" }}
+                                {% if message_obj.user.user_email or message_obj.sender_email %}
+                                <small class="ms-2">({{ message_obj.user.user_email|default:message_obj.sender_email }})</small>
+                                {% endif %}
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <!-- User Message -->
+                            <div class="message-container mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <strong>User Message:</strong>
+                                    <small class="text-muted">{{ message_obj.created_at|date:"d M Y, H:i" }}</small>
+                                </div>
+                                <div class="message-box user-message p-3 rounded">
+                                    {{ message_obj.message|linebreaks }}
+                                </div>
+                                <div class="mt-2">
+                                    {% if message_obj.is_seen %}
+                                    <span class="badge bg-success"><i class="fa fa-check-double"></i> Seen</span>
+                                    {% else %}
+                                    <span class="badge bg-warning"><i class="fa fa-clock"></i> Not Seen</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Admin Reply Section -->
+                            {% if message_obj.reply %}
+                            <div class="message-container mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <strong>Your Reply:</strong>
+                                    <small class="text-muted">{{ message_obj.updated_at|date:"d M Y, H:i" }}</small>
+                                </div>
+                                <div class="message-box admin-message p-3 rounded">
+                                    {{ message_obj.reply|linebreaks }}
+                                </div>
+                                <div class="mt-2">
+                                    {% if message_obj.reply_seen %}
+                                    <span class="badge bg-info"><i class="fa fa-check-double"></i> User Seen</span>
+                                    {% else %}
+                                    <span class="badge bg-warning"><i class="fa fa-clock"></i> User Not Seen</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Reply Form -->
+                            <div class="reply-section">
+                                <h6 class="mb-3">
+                                    {% if message_obj.reply %}
+                                    <i class="fa fa-edit"></i> Update Reply
+                                    {% else %}
+                                    <i class="fa fa-reply"></i> Send Reply
+                                    {% endif %}
+                                </h6>
+                                <form method="POST" id="replyForm">
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        <textarea 
+                                            name="reply" 
+                                            id="replyText" 
+                                            class="form-control" 
+                                            rows="5" 
+                                            placeholder="Type your reply here..."
+                                            required
+                                        >{% if message_obj.reply %}{{ message_obj.reply }}{% endif %}</textarea>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fa fa-paper-plane me-1"></i>
+                                            {% if message_obj.reply %}Update Reply{% else %}Send Reply{% endif %}
+                                        </button>
+                                        <button type="button" class="btn btn-secondary" onclick="sendReplyAjax()">
+                                            <i class="fa fa-flash me-1"></i> Quick Reply (AJAX)
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.message-box {
+    border: 1px solid #e0e0e0;
+    background: #f8f9fa;
+}
+
+.user-message {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-left: 4px solid #2196f3;
+}
+
+.admin-message {
+    background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+    border-left: 4px solid #9c27b0;
+}
+
+.reply-section {
+    border-top: 2px solid #e0e0e0;
+    padding-top: 20px;
+    margin-top: 20px;
+}
+</style>
+
+<script>
+function sendReplyAjax() {
+    const replyText = document.getElementById('replyText').value.trim();
+    if (!replyText) {
+        alert('Please enter a reply');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('reply', replyText);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    fetch('{% url "reply_message_ajax" message_obj.id %}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Reply sent successfully!');
+            // Reload page to show updated reply
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error sending reply. Please try again.');
+    });
+}
+</script>
+
+{% endblock %}

@@ -48,44 +48,57 @@
                                                 </div>
                                             </div>
                                             
-                                            <div class="mb-4 row align-items-center">
+                                            <div class="mb-4 row align-items-start">
                                                 <label class="col-sm-2 col-form-label form-label-title">Product Image</label>
                                                 <div class="col-sm-10">
-                                                    <div class="mb-3">
-                                                        <label class="form-label"><strong>Current Image:</strong></label>
-                                                        <div class="border rounded p-2 d-inline-block position-relative" style="background-color: #f8f9fa;">
-                                                            {% if product.image %}
-                                                            <img src="{% if product.image|slice:':4' == 'http' %}{{ product.image }}?v={{ product.updated_at|date:'U' }}{% elif product.image|slice:':1' == '/' %}{{ product.image }}{% elif product.image|slice:':7' == 'images/' %}https://images.prathmeshsoni.works/{{ product.image }}?v={{ product.updated_at|date:'U' }}{% else %}/media/{{ product.image }}?v={{ product.updated_at|date:'U' }}{% endif %}" 
-                                                                alt="Current Product Image" id="currentProductImage" style="max-width: 250px; max-height: 250px; border: 1px solid #ddd; padding: 5px; border-radius: 5px; object-fit: cover; display: block;" 
-                                                                onerror="this.src='/static/img/placeholder.jpg'; this.onerror=null;">
-                                                            <div class="mt-2 text-center">
-                                                                <button type="button" class="btn btn-sm btn-danger" id="removeCurrentImage" onclick="removeImage()">
-                                                                    <i class="fa fa-trash"></i> Remove Image
-                                                                </button>
+                                                    <div class="row">
+                                                        <!-- Current/Old Image Display -->
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label fw-bold mb-2">
+                                                                <i class="fa fa-image me-2"></i>Current Image:
+                                                            </label>
+                                                            <div class="border rounded p-3 text-center" style="background-color: #f8f9fa; min-height: 300px; display: flex; flex-direction: column; justify-content: center;">
+                                                                {% if product.image %}
+                                                                <img src="{% if product.image|slice:':4' == 'http' %}{{ product.image }}?v={{ product.updated_at|date:'U' }}{% elif product.image|slice:':1' == '/' %}{{ product.image }}{% elif product.image|slice:':7' == 'images/' %}https://images.prathmeshsoni.works/{{ product.image }}?v={{ product.updated_at|date:'U' }}{% else %}/media/{{ product.image }}?v={{ product.updated_at|date:'U' }}{% endif %}" 
+                                                                    alt="Product Image" id="currentProductImage" 
+                                                                    class="img-thumbnail mx-auto" 
+                                                                    style="max-width: 100%; max-height: 250px; width: auto; height: auto; border: 2px solid #dee2e6; padding: 5px; border-radius: 5px; object-fit: contain;" 
+                                                                    onerror="this.src='/static/img/placeholder.jpg'; this.onerror=null;">
+                                                                <div class="mt-3">
+                                                                    <button type="button" class="btn btn-sm btn-danger" id="removeCurrentImage" onclick="removeImage()">
+                                                                        <i class="fa fa-trash me-1"></i> Remove Image
+                                                                    </button>
+                                                                </div>
+                                                                {% else %}
+                                                                <div class="text-muted" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+                                                                    <i class="fa fa-image" style="font-size: 64px; opacity: 0.3; margin-bottom: 15px;"></i>
+                                                                    <span style="font-size: 14px;">No image available</span>
+                                                                </div>
+                                                                {% endif %}
                                                             </div>
-                                                            {% else %}
-                                                            <div class="text-muted p-3" style="min-width: 200px; min-height: 200px; display: flex; align-items: center; justify-content: center;">
-                                                                <span>No image available</span>
+                                                            <input type="hidden" name="remove_image" id="removeImageFlag" value="0">
+                                                        </div>
+                                                        
+                                                        <!-- Upload New Image Section -->
+                                                        <div class="col-md-6 mb-3">
+                                                            <label class="form-label fw-bold mb-2">
+                                                                <i class="fa fa-upload me-2"></i>Upload New Image:
+                                                            </label>
+                                                            <div class="border rounded p-4 text-center" style="background-color: #ffffff; min-height: 300px; display: flex; flex-direction: column; justify-content: center; border: 2px dashed #0d6efd !important;">
+                                                                <div class="mb-3">
+                                                                    <i class="fa fa-cloud-upload" style="font-size: 48px; color: #0d6efd; margin-bottom: 15px;"></i>
+                                                                    <p class="text-muted mb-3">Click below to select and upload a new image</p>
+                                                                    <label for="formFileMultiple" class="btn btn-primary btn-lg">
+                                                                        <i class="fa fa-folder-open me-2"></i>Choose File
+                                                                    </label>
+                                                                    <input type="file" name="images" id="formFileMultiple" accept="image/*" style="display: none;" onchange="updateImagePreview(this)">
+                                                                    <div id="fileName" class="mt-2 text-muted small"></div>
+                                                                </div>
+                                                                <small class="text-muted d-block mt-3">
+                                                                    <strong>Accepted formats:</strong> JPEG, PNG, GIF, WebP<br>
+                                                                    <strong>Maximum size:</strong> 10MB
+                                                                </small>
                                                             </div>
-                                                            {% endif %}
-                                                        </div>
-                                                        <input type="hidden" name="remove_image" id="removeImageFlag" value="0">
-                                                    </div>
-                                                    
-                                                    <div class="mb-3">
-                                                        <label class="form-label"><strong>Change Image:</strong></label>
-                                                        <input class="form-control form-choose" type="file" name="images" id="formFileMultiple" accept="image/*">
-                                                        <small class="text-muted d-block mt-1">Select a new image to replace the current one. Accepted formats: JPEG, PNG, GIF, WebP (Max size: 10MB)</small>
-                                                    </div>
-                                                    
-                                                    <div id="newImagePreview" class="mt-2" style="display: none;">
-                                                        <label class="form-label"><strong>New Image Preview:</strong></label>
-                                                        <div class="border rounded p-2 d-inline-block" style="background-color: #f0f0f0;">
-                                                            <img id="newPreviewImg" src="" alt="New Image Preview" style="max-width: 250px; max-height: 250px; border: 1px solid #ddd; padding: 5px; border-radius: 5px; object-fit: cover; display: block;">
-                                                        </div>
-                                                        <div class="mt-2">
-                                                            <button type="button" class="btn btn-sm btn-secondary" id="cancelImageChange">Cancel</button>
-                                                            <small class="text-muted ms-2">Select a different image or click cancel to keep current image</small>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -178,69 +191,61 @@
         });
     }
     
-    // Image Preview Functionality for Edit Product
-    const imageUploadInput = document.getElementById('formFileMultiple');
-    const currentImage = document.getElementById('currentProductImage');
-    const cancelButton = document.getElementById('cancelImageChange');
-    
-    if (imageUploadInput) {
-        imageUploadInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                // Clear remove flag if new image is selected (new image will override removal)
-                const removeFlag = document.getElementById('removeImageFlag');
-                if (removeFlag && removeFlag.value == '1') {
-                    removeFlag.value = '0';
-                    console.log('Remove flag cleared because new image selected');
-                }
-                
-                // Validate file size (10MB)
-                if (file.size > 10 * 1024 * 1024) {
-                    alert('Image file is too large. Maximum size is 10MB');
-                    e.target.value = '';
-                    return;
-                }
-                
-                // Validate file type
-                const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-                if (!allowedTypes.includes(file.type)) {
-                    alert('Invalid image format. Please upload JPEG, PNG, GIF, or WebP');
-                    e.target.value = '';
-                    return;
-                }
-                
-                // Show preview
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const previewImg = document.getElementById('newPreviewImg');
-                    const imagePreview = document.getElementById('newImagePreview');
-                    if (previewImg && imagePreview) {
-                        previewImg.src = event.target.result;
-                        imagePreview.style.display = 'block';
+    // Function to update image preview when file is selected
+    function updateImagePreview(input) {
+        const file = input.files[0];
+        const fileName = document.getElementById('fileName');
+        const currentImage = document.getElementById('currentProductImage');
+        const removeFlag = document.getElementById('removeImageFlag');
+        
+        if (file) {
+            // Clear remove flag if new image is selected (new image will override removal)
+            if (removeFlag && removeFlag.value == '1') {
+                removeFlag.value = '0';
+            }
+            
+            // Validate file size (10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                alert('Image file is too large. Maximum size is 10MB');
+                input.value = '';
+                if (fileName) fileName.textContent = '';
+                return;
+            }
+            
+            // Validate file type
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('Invalid image format. Please upload JPEG, PNG, GIF, or WebP');
+                input.value = '';
+                if (fileName) fileName.textContent = '';
+                return;
+            }
+            
+            // Show file name
+            if (fileName) {
+                fileName.innerHTML = '<i class="fa fa-check-circle text-success me-1"></i><strong>' + file.name + '</strong> (Selected)';
+            }
+            
+            // Immediately update the current image preview
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                if (currentImage) {
+                    // Update the current image display with new preview
+                    currentImage.src = event.target.result;
+                    currentImage.style.border = '2px solid #28a745';
+                    
+                    // Add a visual indicator that it's a new image
+                    const imageContainer = currentImage.closest('.border');
+                    if (imageContainer) {
+                        imageContainer.style.borderColor = '#28a745';
+                        imageContainer.style.backgroundColor = '#d4edda';
                     }
-                };
-                reader.readAsDataURL(file);
-            } else {
-                const imagePreview = document.getElementById('newImagePreview');
-                if (imagePreview) {
-                    imagePreview.style.display = 'none';
                 }
-            }
-        });
-    }
-    
-    // Cancel button to clear file input and hide preview
-    if (cancelButton) {
-        cancelButton.addEventListener('click', function() {
-            const imageUploadInput = document.getElementById('formFileMultiple');
-            const imagePreview = document.getElementById('newImagePreview');
-            if (imageUploadInput) {
-                imageUploadInput.value = '';
-            }
-            if (imagePreview) {
-                imagePreview.style.display = 'none';
-            }
-        });
+            };
+            reader.readAsDataURL(file);
+        } else {
+            if (fileName) fileName.textContent = '';
+        }
     }
     
     // After form submission, reload current image if it was updated
@@ -279,21 +284,19 @@
             
             // Hide current image and show message
             const currentImageContainer = document.getElementById('currentProductImage');
-            if (currentImageContainer) {
-                currentImageContainer.style.display = 'none';
-                currentImageContainer.parentElement.innerHTML = '<div class="text-muted p-3 text-center"><i class="fa fa-image"></i><br>Image will be removed after saving</div>';
+            const imageWrapper = currentImageContainer ? currentImageContainer.closest('.border') : null;
+            if (imageWrapper) {
+                imageWrapper.innerHTML = '<div class="text-muted p-4 text-center" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;"><i class="fa fa-image" style="font-size: 64px; opacity: 0.3; margin-bottom: 15px;"></i><span>Image will be removed after saving</span></div>';
             }
             
             // Clear file input if any file was selected
             const fileInput = document.getElementById('formFileMultiple');
+            const fileName = document.getElementById('fileName');
             if (fileInput) {
                 fileInput.value = '';
             }
-            
-            // Hide preview if shown
-            const preview = document.getElementById('newImagePreview');
-            if (preview) {
-                preview.style.display = 'none';
+            if (fileName) {
+                fileName.textContent = '';
             }
             
             console.log('Image removal marked for processing');

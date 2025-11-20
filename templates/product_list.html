@@ -27,10 +27,12 @@
                                     <table class="table table-striped all-package">
                                         <thead>
                                             <tr>
+                                                <th style="width: 30px;"></th>
                                                 <th>#</th>
                                                 <th>Product Name</th>
                                                 <th>Category</th>
                                                 <th>Price (₹)</th>
+                                                <th>Variants</th>
                                                 <th>Total Stock</th>
                                                 <th>Low Stock</th>
                                                 <th>Out of Stock</th>
@@ -42,16 +44,32 @@
                                         <tbody>
                                             
                                             {% for item in products %}
-                                            <tr>
+                                            <tr class="product-row" data-product-id="{{ item.product.id }}">
+                                                <td>
+                                                    {% if item.variant_count > 0 %}
+                                                    <button class="btn btn-sm btn-link toggle-variants" type="button" data-bs-toggle="collapse" data-bs-target="#variants-{{ item.product.id }}" aria-expanded="false">
+                                                        <i class="fa fa-chevron-down"></i>
+                                                    </button>
+                                                    {% endif %}
+                                                </td>
                                                 <td>{{ forloop.counter }}</td>
                                                 <td>
                                                     <strong>{{ item.product.name }}</strong>
-                                                    {% if item.subproducts %}
-                                                    <br><small class="text-muted">{{ item.subproducts.count }} variant(s)</small>
+                                                    {% if item.variant_count > 0 %}
+                                                    <br><small class="text-muted">{{ item.variant_count }} variant(s)</small>
                                                     {% endif %}
                                                 </td>
                                                 <td>{{ item.product.category }}</td>
                                                 <td>₹{{ item.product.price }}</td>
+                                                <td>
+                                                    {% if item.variant_count > 0 %}
+                                                        <a href="{% url 'product_variants' item.product.id %}" class="badge bg-info text-white">
+                                                            {{ item.variant_count }} variant(s)
+                                                        </a>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">0</span>
+                                                    {% endif %}
+                                                </td>
                                                 <td>
                                                     {% if item.total_stock > 0 %}
                                                         <span class="badge bg-success">{{ item.total_stock }}</span>
@@ -61,14 +79,14 @@
                                                 </td>
                                                 <td>
                                                     {% if item.low_stock_count > 0 %}
-                                                        <span class="badge bg-warning text-dark">{{ item.low_stock_count }} variant(s)</span>
+                                                        <span class="badge bg-warning text-dark">{{ item.low_stock_count }}</span>
                                                     {% else %}
                                                         <span class="badge bg-secondary">0</span>
                                                     {% endif %}
                                                 </td>
                                                 <td>
                                                     {% if item.out_of_stock_count > 0 %}
-                                                        <span class="badge bg-danger">{{ item.out_of_stock_count }} variant(s)</span>
+                                                        <span class="badge bg-danger">{{ item.out_of_stock_count }}</span>
                                                     {% else %}
                                                         <span class="badge bg-success">0</span>
                                                     {% endif %}
@@ -77,7 +95,7 @@
                                                 <td>
                                                     <ul>
                                                         <li>
-                                                            <a href="{% url 'allproduct' %}" title="View SubProducts">
+                                                            <a href="{% url 'product_variants' item.product.id %}" title="View Variants">
                                                                 <span class="lnr lnr-eye"></span>
                                                             </a>
                                                         </li>
@@ -94,6 +112,77 @@
                                                     </ul>
                                                 </td>
                                             </tr>
+                                            {% if item.variant_count > 0 %}
+                                            <tr class="collapse" id="variants-{{ item.product.id }}">
+                                                <td colspan="11" style="background-color: #f8f9fa; padding: 15px;">
+                                                    <div class="ms-4">
+                                                        <h6 class="mb-3">Variants for {{ item.product.name }}:</h6>
+                                                        <div class="table-responsive">
+                                                            <table class="table table-sm table-bordered">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>#</th>
+                                                                        <th>Image</th>
+                                                                        <th>Description</th>
+                                                                        <th>Total Stock</th>
+                                                                        <th>Size/Color Combos</th>
+                                                                        <th>Low Stock</th>
+                                                                        <th>Out of Stock</th>
+                                                                        <th>Actions</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {% for variant_info in item.variants_with_stock %}
+                                                                    {% with variant=variant_info.variant %}
+                                                                    <tr>
+                                                                        <td>{{ forloop.counter }}</td>
+                                                                        <td>
+                                                                            {% if variant.image %}
+                                                                            <img src="{% if variant.image|slice:':4' == 'http' %}{{ variant.image }}{% elif variant.image|slice:':7' == 'images/' %}https://images.prathmeshsoni.works/{{ variant.image }}{% else %}/media/{{ variant.image }}{% endif %}" 
+                                                                                style="width: 50px; height: 50px; object-fit: cover;" alt="Variant">
+                                                                            {% else %}
+                                                                            <span class="text-muted">No Image</span>
+                                                                            {% endif %}
+                                                                        </td>
+                                                                        <td>{{ variant.description|truncatewords:10 }}</td>
+                                                                        <td>
+                                                                            <span class="badge bg-info">{{ variant_info.total_stock }}</span>
+                                                                        </td>
+                                                                        <td>{{ variant.product_size_color.count }}</td>
+                                                                        <td>
+                                                                            {% if variant_info.low_stock > 0 %}
+                                                                                <span class="badge bg-warning">{{ variant_info.low_stock }}</span>
+                                                                            {% else %}
+                                                                                <span class="badge bg-secondary">0</span>
+                                                                            {% endif %}
+                                                                        </td>
+                                                                        <td>
+                                                                            {% if variant_info.out_of_stock > 0 %}
+                                                                                <span class="badge bg-danger">{{ variant_info.out_of_stock }}</span>
+                                                                            {% else %}
+                                                                                <span class="badge bg-success">0</span>
+                                                                            {% endif %}
+                                                                        </td>
+                                                                        <td>
+                                                                            <a href="{% url 'edit_quantity' variant.id %}" class="btn btn-sm btn-primary" title="Edit Stock">
+                                                                                <i class="fa fa-edit"></i>
+                                                                            </a>
+                                                                        </td>
+                                                                    </tr>
+                                                                    {% endwith %}
+                                                                    {% endfor %}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                        <div class="mt-2">
+                                                            <a href="{% url 'product_variants' item.product.id %}" class="btn btn-sm btn-primary">
+                                                                <i class="fa fa-external-link"></i> View All Variants
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endif %}
                                             {% endfor %}
                                         </tbody>
                                     </table>
@@ -114,7 +203,23 @@
     <!-- Order section End -->
 </div>
 
-
-
+<script>
+    // Handle variant row expansion
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleButtons = document.querySelectorAll('.toggle-variants');
+        toggleButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                if (icon.classList.contains('fa-chevron-down')) {
+                    icon.classList.remove('fa-chevron-down');
+                    icon.classList.add('fa-chevron-up');
+                } else {
+                    icon.classList.remove('fa-chevron-up');
+                    icon.classList.add('fa-chevron-down');
+                }
+            });
+        });
+    });
+</script>
 
 {% endblock %}

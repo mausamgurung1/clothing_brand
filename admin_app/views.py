@@ -350,11 +350,27 @@ def edit_quantity(request,id):
                     messages.error(request, 'Image file is too large. Maximum size is 10MB')
                     return redirect('edit_quantity', id=id)
                 
-                # Validate image type
+                # Validate image type - be more flexible with content types
                 allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
-                if image.content_type not in allowed_types:
-                    messages.error(request, 'Invalid image format. Please upload JPEG, PNG, GIF, or WebP')
-                    return redirect('edit_quantity', id=id)
+                allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.JPG', '.JPEG', '.PNG', '.GIF', '.WEBP']
+                
+                # Check content type
+                content_type = image.content_type
+                # Also check filename extension as fallback
+                filename = image.name.lower() if hasattr(image, 'name') and image.name else ''
+                file_extension = '.' + filename.split('.')[-1] if '.' in filename else ''
+                
+                # If content type is missing or not in allowed list, check extension
+                if content_type not in allowed_types:
+                    if file_extension not in allowed_extensions:
+                        messages.error(request, f'Invalid image format. Please upload JPEG, PNG, GIF, or WebP. Received: {content_type} (file: {image.name})')
+                        print(f"Image validation failed - Content type: {content_type}, Extension: {file_extension}, Filename: {image.name}")
+                        return redirect('edit_quantity', id=id)
+                    else:
+                        # Extension is valid, accept it even if content_type is wrong
+                        print(f"Image accepted by extension - Content type: {content_type}, Extension: {file_extension}, Filename: {image.name}")
+                else:
+                    print(f"Image accepted - Content type: {content_type}, Filename: {image.name}")
                 
                 # Read image file content
                 if hasattr(image, 'read'):
@@ -384,21 +400,35 @@ def edit_quantity(request,id):
                         image_url = url
                     
                     # Update the product image
+                    from django.utils import timezone
                     product.image = image_url
                     # Force update the updated_at timestamp for cache-busting
-                    from django.utils import timezone
                     product.updated_at = timezone.now()
-                    product.save()
+                    
+                    # Save the product explicitly with update_fields to ensure it's saved
+                    product.save(update_fields=['image', 'updated_at'])
+                    
                     # Force refresh to ensure it's persisted
                     product.refresh_from_db()
                     
-                    # Verify the save
+                    # Verify the save immediately
                     verify_product = SubProduct.objects.get(id=product.id)
                     print(f"Image updated for product {product.id}:")
                     print(f"  Old URL: {old_image}")
-                    print(f"  New URL: {verify_product.image}")
+                    print(f"  New URL saved: {image_url}")
+                    print(f"  New URL in DB: {verify_product.image}")
                     print(f"  Updated at: {verify_product.updated_at}")
                     print(f"  Verification: URLs match = {verify_product.image == image_url}")
+                    
+                    # Double-check: if the save didn't work, try again
+                    if verify_product.image != image_url:
+                        print(f"WARNING: Image URL mismatch! Retrying save...")
+                        product.image = image_url
+                        product.updated_at = timezone.now()
+                        product.save()
+                        product.refresh_from_db()
+                        verify_product = SubProduct.objects.get(id=product.id)
+                        print(f"After retry - New URL in DB: {verify_product.image}")
                     
                     image_uploaded = True
                     messages.success(request, f'Product image updated successfully!')
@@ -417,17 +447,47 @@ def edit_quantity(request,id):
         # Check if only image was updated/removed (no stock fields provided)
         image_only_update = (image_uploaded or remove_image) and (not product_id or not size_id or not color_id or not stock_quantity)
         
-        # If only image was updated/removed, redirect to show the change
+        # If only image was updated/removed, ensure save and redirect
         if image_only_update:
+            # Final save check before redirect - ensure image change is persisted
+            if image_uploaded or remove_image:
+                # Force save again to ensure it's persisted
+                product.save()
+                product.refresh_from_db()
+                
+                # Final verification from database
+                verify = SubProduct.objects.get(id=product.id)
+                print(f"Final check after save - Product {product.id}:")
+                print(f"  Image in DB: {verify.image}")
+                print(f"  Image in object: {product.image}")
+                if verify.image != product.image:
+                    print(f"WARNING: Mismatch detected! Saving again...")
+                    product.image = verify.image if remove_image and not image_uploaded else product.image
+                    product.save()
+                    product.refresh_from_db()
+            
             if image_uploaded:
-                messages.info(request, 'Image updated successfully! If you want to update stock, please fill in all stock fields.')
+                messages.success(request, 'Product image updated successfully!')
+                messages.info(request, 'If you want to update stock, please fill in all stock fields and submit again.')
             elif remove_image:
-                messages.info(request, 'Image removed successfully! If you want to update stock, please fill in all stock fields.')
+                messages.success(request, 'Product image removed successfully!')
+                messages.info(request, 'If you want to update stock, please fill in all stock fields and submit again.')
             return redirect('edit_quantity', id=id)
         
         # If stock fields are provided, validate and update stock
         if not product_id or not size_id or not color_id or not stock_quantity:
-            messages.error(request, 'Please enter all fields (size, color, and stock quantity)')
+            # If image was updated, that's okay - just save the image
+            if image_uploaded or remove_image:
+                # Ensure image is saved even if stock update fails
+                product.save()
+                product.refresh_from_db()
+                if image_uploaded:
+                    messages.success(request, 'Product image updated successfully!')
+                elif remove_image:
+                    messages.success(request, 'Product image removed successfully!')
+                messages.warning(request, 'Stock was not updated. Please enter all stock fields (size, color, and stock quantity) to update stock.')
+            else:
+                messages.error(request, 'Please enter all fields (size, color, and stock quantity)')
             return redirect('edit_quantity', id=id)
         
         # Validate stock quantity is a positive integer
@@ -458,15 +518,15 @@ def edit_quantity(request,id):
             stock_obj.save()
             messages.success(request, f'New stock entry created! {size_obj.name} / {color_obj.name}: {stock_quantity}')
     
-    # Refresh product from database to get latest image and updated_at after POST
-    if request.method == 'POST':
-        product.refresh_from_db()
-        # Re-fetch related data
-        sizeandcolor = ProductSizeNColor.objects.filter(product=product.product_id)
-        unique_sizes = [size.size for size in sizeandcolor]
-        sizes = set(unique_sizes)
-        unique_colors = [color.color for color in sizeandcolor]
-        colors = set(unique_colors)
+    # Refresh product from database to get latest image and updated_at
+    product.refresh_from_db()
+    
+    # Re-fetch related data
+    sizeandcolor = ProductSizeNColor.objects.filter(product=product.product_id)
+    unique_sizes = [size.size for size in sizeandcolor]
+    sizes = set(unique_sizes)
+    unique_colors = [color.color for color in sizeandcolor]
+    colors = set(unique_colors)
     
     context = {
         'product': product,
@@ -590,7 +650,7 @@ def remove_products(request, id):
 @login_required(login_url='/admin/login/?next=/admin_side/')
 def product_list(request):
     # Get all products with their stock information
-    products = Product.objects.all().order_by('-created_at').prefetch_related('subproduct_set')
+    products = Product.objects.all().order_by('-created_at').prefetch_related('subproduct_set', 'productsizencolor_set')
     
     # Add stock information to each product
     product_list_with_stock = []
@@ -611,18 +671,65 @@ def product_list(request):
         # Get out of stock count (stock = 0)
         out_of_stock_count = size_color_combos.filter(stock_quantity=0).count()
         
+        # Get variant count
+        variant_count = subproducts.count()
+        
         product_list_with_stock.append({
             'product': product,
             'total_stock': total_stock,
             'low_stock_count': low_stock_count,
             'out_of_stock_count': out_of_stock_count,
             'subproducts': subproducts,
+            'variant_count': variant_count,
+            'size_color_combos': size_color_combos,
         })
     
     context = {
         'products': product_list_with_stock,
     }
     return render(request, 'product_list.html', context)
+
+
+@login_required(login_url='/admin/login/?next=/admin_side/')
+def product_variants(request, product_id):
+    """View to show all variants of a specific product"""
+    try:
+        product = Product.objects.get(id=product_id)
+        variants = SubProduct.objects.filter(product=product).prefetch_related('product_size_color')
+        
+        # Add stock information to each variant
+        for variant in variants:
+            variant.total_stock = variant.get_stock_quantity()
+            variant.low_stock_variants = variant.product_size_color.filter(stock_quantity__lt=10, stock_quantity__gt=0).count()
+            variant.out_of_stock_variants = variant.product_size_color.filter(stock_quantity=0).count()
+            variant.variant_count = variant.product_size_color.count()
+        
+        context = {
+            'product': product,
+            'variants': variants,
+        }
+        return render(request, 'product_variants.html', context)
+    except Product.DoesNotExist:
+        messages.error(request, 'Product not found')
+        return redirect('product_list')
+
+
+@login_required(login_url='/admin/login/?next=/admin_side/')
+def variant_list(request):
+    """View to show all variants across all products"""
+    variants = SubProduct.objects.all().order_by('-created_at').select_related('product', 'product__category').prefetch_related('product_size_color')
+   
+    # Add stock information to each variant
+    for variant in variants:
+        variant.total_stock = variant.get_stock_quantity()
+        variant.low_stock_variants = variant.product_size_color.filter(stock_quantity__lt=10, stock_quantity__gt=0).count()
+        variant.out_of_stock_variants = variant.product_size_color.filter(stock_quantity=0).count()
+        variant.variant_count = variant.product_size_color.count()
+   
+    context = {
+        'variants': variants,
+    }
+    return render(request, 'variant_list.html', context)
 
 @login_required(login_url='/admin/login/?next=/admin_side/')
 def admin_side(request):
@@ -679,6 +786,109 @@ def contact_list(request):
         'contacts':contacts,
     }
     return render(request, 'contact_list.html', context)
+
+
+# ===============================================================================================================
+# Message Management Views (Admin)
+# ===============================================================================================================
+
+@login_required(login_url='/admin/login/?next=/admin_side/')
+def message_list(request):
+    """List all messages for admin"""
+    messages_list = Message.objects.all().order_by('-created_at')
+    unread_count = Message.objects.filter(is_seen=False).count()
+    unread_with_replies = Message.objects.filter(reply__isnull=False, reply_seen=False).count()
+    
+    context = {
+        'messages_list': messages_list,
+        'unread_count': unread_count,
+        'unread_with_replies': unread_with_replies,
+    }
+    return render(request, 'message_list.html', context)
+
+
+@login_required(login_url='/admin/login/?next=/admin_side/')
+def message_detail(request, message_id):
+    """View and reply to a specific message"""
+    try:
+        message = Message.objects.get(pk=message_id)
+        
+        # Mark as seen when admin views it
+        if not message.is_seen:
+            message.mark_as_seen()
+        
+        if request.method == 'POST':
+            reply_text = request.POST.get('reply', '').strip()
+            if reply_text:
+                message.reply = reply_text
+                message.reply_seen = False  # Reset seen status when new reply is added
+                message.save()
+                messages.success(request, 'Reply sent successfully!')
+                return redirect('message_detail', message_id=message_id)
+            else:
+                messages.error(request, 'Reply cannot be empty')
+        
+        context = {
+            'message_obj': message,
+        }
+        return render(request, 'message_detail.html', context)
+        
+    except Message.DoesNotExist:
+        messages.error(request, 'Message not found')
+        return redirect('message_list')
+
+
+@login_required(login_url='/admin/login/?next=/admin_side/')
+def reply_message_ajax(request, message_id):
+    """AJAX endpoint to reply to a message"""
+    if request.method == 'POST':
+        try:
+            message = Message.objects.get(pk=message_id)
+            reply_text = request.POST.get('reply', '').strip()
+            
+            if not reply_text:
+                return JsonResponse({'success': False, 'message': 'Reply cannot be empty'})
+            
+            message.reply = reply_text
+            message.reply_seen = False  # Reset seen status
+            message.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Reply sent successfully!',
+                'reply': reply_text,
+                'created_at': message.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+            })
+            
+        except Message.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Message not found'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+@login_required(login_url='/admin/login/?next=/admin_side/')
+def mark_message_seen_ajax(request, message_id):
+    """AJAX endpoint to mark message as seen"""
+    if request.method == 'POST':
+        try:
+            message = Message.objects.get(pk=message_id)
+            message.mark_as_seen()
+            return JsonResponse({'success': True, 'message': 'Message marked as seen'})
+        except Message.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Message not found'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+@login_required(login_url='/admin/login/?next=/admin_side/')
+def get_unread_count(request):
+    """Get count of unread messages for admin"""
+    unread_count = Message.objects.filter(is_seen=False).count()
+    return JsonResponse({'unread_count': unread_count})
 
 @login_required(login_url='/admin/login/?next=/admin_side/')
 def order_detail(request, order_id):

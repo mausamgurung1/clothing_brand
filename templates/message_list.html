@@ -1,0 +1,112 @@
+{% extends 'admin_layout.html' %}
+{% load static %}
+
+{% block title %}Messages {% endblock %}
+
+{% block body %}
+
+<div class="page-body-wrapper">
+    <!-- Message section Start -->
+    <div class="page-body">
+        <div class="title-header">
+            <h5>Messages / Chat Support</h5>
+            <div class="d-flex gap-2">
+                <span class="badge bg-danger">Unread: {{ unread_count }}</span>
+                <span class="badge bg-warning">Unread Replies: {{ unread_with_replies }}</span>
+            </div>
+        </div>
+
+        <!-- Table Start -->
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive table-desi">
+                                <table class="table table-striped all-package">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>User</th>
+                                            <th>Email</th>
+                                            <th>Message</th>
+                                            <th>Reply</th>
+                                            <th>Status</th>
+                                            <th>Date</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for msg in messages_list %}
+                                        <tr class="{% if not msg.is_seen %}table-warning{% endif %}">
+                                            <td>{{ forloop.counter }}</td>
+                                            <td>
+                                                <strong>{{ msg.user.user_name|default:msg.sender_name|default:"Guest" }}</strong>
+                                                {% if not msg.is_seen %}
+                                                <span class="badge bg-danger ms-1">New</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ msg.user.user_email|default:msg.sender_email|default:"N/A" }}</td>
+                                            <td>
+                                                <div class="text-truncate" style="max-width: 200px;" title="{{ msg.message }}">
+                                                    {{ msg.message|truncatewords:15 }}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {% if msg.reply %}
+                                                    <span class="badge bg-success">
+                                                        <i class="fa fa-check-circle"></i> Replied
+                                                    </span>
+                                                    {% if not msg.reply_seen %}
+                                                    <span class="badge bg-warning ms-1">Not Seen</span>
+                                                    {% else %}
+                                                    <span class="badge bg-info ms-1">Seen</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="badge bg-secondary">No Reply</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if msg.is_seen %}
+                                                    <span class="badge bg-success">Seen</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Unread</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ msg.created_at|date:"d M Y H:i" }}</td>
+                                            <td>
+                                                <a href="{% url 'message_detail' msg.id %}" class="btn btn-sm btn-primary">
+                                                    <i class="fa fa-eye"></i> View & Reply
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="8" class="text-center">No messages yet</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Table End -->
+    </div>
+    <!-- Message section End -->
+</div>
+
+<style>
+.table-warning {
+    background-color: #fff3cd !important;
+}
+.text-truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+</style>
+
+{% endblock %}

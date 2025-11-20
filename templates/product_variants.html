@@ -1,0 +1,101 @@
+{% extends 'admin_layout.html' %}
+{% load static %}
+{% block title %}Product Variants - {{ product.name }}{% endblock %}
+
+{% block body %}
+<div class="page-body-wrapper">
+    <div class="page-body">
+        <div class="title-header d-flex justify-content-between align-items-center">
+            <h5>Variants for: {{ product.name }}</h5>
+            <div>
+                <a href="{% url 'product_list' %}" class="btn btn-secondary btn-sm">
+                    <i class="fa fa-arrow-left"></i> Back to Products
+                </a>
+            </div>
+        </div>
+
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Image</th>
+                                            <th>Description</th>
+                                            <th>Total Stock</th>
+                                            <th>Variants</th>
+                                            <th>Low Stock</th>
+                                            <th>Out of Stock</th>
+                                            <th>Created Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for variant in variants %}
+                                        <tr>
+                                            <td>{{ forloop.counter }}</td>
+                                            <td>
+                                                {% if variant.image %}
+                                                <img src="{% if variant.image|slice:':4' == 'http' %}{{ variant.image }}{% elif variant.image|slice:':7' == 'images/' %}https://images.prathmeshsoni.works/{{ variant.image }}{% else %}/media/{{ variant.image }}{% endif %}" 
+                                                    style="width: 80px; height: 80px; object-fit: cover; border-radius: 5px;" alt="Variant">
+                                                {% else %}
+                                                <span class="text-muted">No Image</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <strong>{{ variant.description|truncatewords:15 }}</strong>
+                                            </td>
+                                            <td>
+                                                {% if variant.total_stock > 0 %}
+                                                    <span class="badge bg-success" style="font-size: 14px;">{{ variant.total_stock }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger" style="font-size: 14px;">0</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">{{ variant.variant_count }}</span>
+                                            </td>
+                                            <td>
+                                                {% if variant.low_stock_variants > 0 %}
+                                                    <span class="badge bg-warning text-dark">{{ variant.low_stock_variants }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">0</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if variant.out_of_stock_variants > 0 %}
+                                                    <span class="badge bg-danger">{{ variant.out_of_stock_variants }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-success">0</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ variant.created_at|date:"M d, Y" }}</td>
+                                            <td>
+                                                <a href="{% url 'edit_quantity' variant.id %}" class="btn btn-sm btn-primary" title="Edit Stock">
+                                                    <i class="fa fa-edit"></i> Edit
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="9" class="text-center text-muted">
+                                                No variants found for this product.
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

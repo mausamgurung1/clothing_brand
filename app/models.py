@@ -115,6 +115,40 @@ class Contact(models.Model):
         return f'{self.name} - {self.email} |  {time}'
     
 
+class Message(models.Model):
+    """Message model for user-admin chat communication"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='messages')
+    sender_name = models.CharField(max_length=100, null=True, blank=True)
+    sender_email = models.CharField(max_length=100, null=True, blank=True)
+    message = models.TextField()
+    reply = models.TextField(null=True, blank=True)
+    is_from_user = models.BooleanField(default=True)  # True if from user, False if from admin
+    is_seen = models.BooleanField(default=False)  # True if admin has seen user's message
+    reply_seen = models.BooleanField(default=False)  # True if user has seen admin's reply
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = 'Messages'
+    
+    def __str__(self):
+        time = (self.created_at + timedelta(hours=5, minutes=30)).strftime("%d/%b/%y %I:%M %p")
+        sender = self.user.user_name if self.user else self.sender_name
+        return f'{sender} - {time}'
+    
+    def mark_as_seen(self):
+        """Mark message as seen by admin"""
+        self.is_seen = True
+        self.save(update_fields=['is_seen'])
+    
+    def mark_reply_as_seen(self):
+        """Mark admin reply as seen by user"""
+        if self.reply:
+            self.reply_seen = True
+            self.save(update_fields=['reply_seen'])
+
+
 class Visitor(models.Model):
     count = models.IntegerField(default=0)
 
