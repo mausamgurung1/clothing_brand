@@ -30,82 +30,90 @@
         <div class="row">
             <!-- Total Earnings Card -->
             <div class="col-sm-6 col-xxl-3 col-lg-6 mt-4">
-                <div class="b-b-primary border-5 border-0 card o-hidden">
-                    <div class="custome-1-bg b-r-4 card-body">
-                        <div class="media align-items-center static-top-widget">
-                            <div class="media-body p-0">
-                                <span class="m-0">Total Earnings</span>
-                                <h4 class="mb-0">₹{{ total_earning|floatformat:0 }}</h4>
-                                {% if earning_growth > 0 %}
-                                <small class="text-success"><i data-feather="trending-up" class="me-1"></i>+{{ earning_growth }}% this month</small>
-                                {% endif %}
-                            </div>
-                            <div class="align-self-center text-center">
-                                <i data-feather="dollar-sign" class="text-primary"></i>
+                <a href="{% url 'order_list' %}" class="text-decoration-none">
+                    <div class="b-b-primary border-5 border-0 card o-hidden dashboard-card-clickable">
+                        <div class="custome-1-bg b-r-4 card-body">
+                            <div class="media align-items-center static-top-widget">
+                                <div class="media-body p-0">
+                                    <span class="m-0">Total Earnings</span>
+                                    <h4 class="mb-0">₹{{ total_earning|floatformat:0 }}</h4>
+                                    {% if earning_growth > 0 %}
+                                    <small class="text-success"><i data-feather="trending-up" class="me-1"></i>+{{ earning_growth }}% this month</small>
+                                    {% endif %}
+                                </div>
+                                <div class="align-self-center text-center">
+                                    <i data-feather="dollar-sign" class="text-primary"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </a>
             </div>
 
             <!-- Total Orders Card -->
             <div class="col-sm-6 col-xxl-3 col-lg-6 mt-4">
-                <div class="b-b-danger border-5 border-0 card o-hidden">
-                    <div class="custome-2-bg b-r-4 card-body">
-                        <div class="media static-top-widget">
-                            <div class="media-body p-0">
-                                <span class="m-0">Total Orders</span>
-                                <h4 class="mb-0 counter">{{ total_booking }}</h4>
-                                {% if orders_growth > 0 %}
-                                <small class="text-success"><i data-feather="trending-up" class="me-1"></i>+{{ orders_growth }}% this month</small>
-                                {% endif %}
-                            </div>
-                            <div class="align-self-center text-center">
-                                <i data-feather="shopping-bag" class="text-danger"></i>
+                <a href="{% url 'order_list' %}" class="text-decoration-none">
+                    <div class="b-b-danger border-5 border-0 card o-hidden dashboard-card-clickable">
+                        <div class="custome-2-bg b-r-4 card-body">
+                            <div class="media static-top-widget">
+                                <div class="media-body p-0">
+                                    <span class="m-0">Total Orders</span>
+                                    <h4 class="mb-0 counter">{{ total_booking }}</h4>
+                                    {% if orders_growth > 0 %}
+                                    <small class="text-success"><i data-feather="trending-up" class="me-1"></i>+{{ orders_growth }}% this month</small>
+                                    {% endif %}
+                                </div>
+                                <div class="align-self-center text-center">
+                                    <i data-feather="shopping-bag" class="text-danger"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </a>
             </div>
 
             <!-- Total Products Card -->
             <div class="col-sm-6 col-xxl-3 col-lg-6 mt-4">
-                <div class="b-b-secondary border-5 border-0 card o-hidden">
-                    <div class="custome-3-bg b-r-4 card-body">
-                        <div class="media static-top-widget">
-                            <div class="media-body p-0">
-                                <span class="m-0">Total Products</span>
-                                <h4 class="mb-0 counter">{{ total_product }}</h4>
-                                {% if low_stock_count > 0 %}
-                                <small class="text-warning"><i data-feather="alert-triangle" class="me-1"></i>{{ low_stock_count }} low stock</small>
-                                {% else %}
-                                <small class="text-success"><i data-feather="check-circle" class="me-1"></i>All in stock</small>
-                                {% endif %}
-                            </div>
-                            <div class="align-self-center text-center">
-                                <i data-feather="box" class="text-secondary"></i>
+                <a href="{% url 'product_list' %}" class="text-decoration-none">
+                    <div class="b-b-secondary border-5 border-0 card o-hidden dashboard-card-clickable">
+                        <div class="custome-3-bg b-r-4 card-body">
+                            <div class="media static-top-widget">
+                                <div class="media-body p-0">
+                                    <span class="m-0">Total Products</span>
+                                    <h4 class="mb-0 counter">{{ total_product }}</h4>
+                                    {% if low_stock_count > 0 %}
+                                    <small class="text-warning"><i data-feather="alert-triangle" class="me-1"></i>{{ low_stock_count }} low stock</small>
+                                    {% else %}
+                                    <small class="text-success"><i data-feather="check-circle" class="me-1"></i>All in stock</small>
+                                    {% endif %}
+                                </div>
+                                <div class="align-self-center text-center">
+                                    <i data-feather="box" class="text-secondary"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </a>
             </div>
 
             <!-- Total Users Card -->
             <div class="col-sm-6 col-xxl-3 col-lg-6 mt-4">
-                <div class="b-b-success border-5 border-0 card o-hidden">
-                    <div class="custome-4-bg b-r-4 card-body">
-                        <div class="media static-top-widget">
-                            <div class="media-body p-0">
-                                <span class="m-0">Total Users</span>
-                                <h4 class="mb-0 counter">{{ total_user }}</h4>
-                                <small class="text-muted">Registered customers</small>
-                            </div>
-                            <div class="align-self-center text-center">
-                                <i data-feather="users" class="text-success"></i>
+                <a href="{% url 'user_list' %}" class="text-decoration-none">
+                    <div class="b-b-success border-5 border-0 card o-hidden dashboard-card-clickable">
+                        <div class="custome-4-bg b-r-4 card-body">
+                            <div class="media static-top-widget">
+                                <div class="media-body p-0">
+                                    <span class="m-0">Total Users</span>
+                                    <h4 class="mb-0 counter">{{ total_user }}</h4>
+                                    <small class="text-muted">Registered customers</small>
+                                </div>
+                                <div class="align-self-center text-center">
+                                    <i data-feather="users" class="text-success"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </a>
             </div>
         </div>
 
@@ -315,6 +323,27 @@
         </div>
     </div>
 </div>
+
+<style>
+.dashboard-card-clickable {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.dashboard-card-clickable:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15) !important;
+}
+
+.dashboard-card-clickable a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.dashboard-card-clickable:hover .card-body {
+    opacity: 0.9;
+}
+</style>
 
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script>

@@ -1,17 +1,20 @@
 {% extends 'admin_layout.html' %}
 {% load static %}
 
-{% block title %}Order List{% endblock %}
-
+{% block title %}User List{% endblock %}
 
 {% block body %}
 
 <div class="page-body-wrapper">
- 
-    <!-- Order section Start -->
+    <!-- User section Start -->
     <div class="page-body">
         <div class="title-header">
-            <h5>Order List</h5>
+            <h5>User List</h5>
+            <div class="d-flex gap-2">
+                <span class="badge bg-primary">Total Users: {{ total_users }}</span>
+                <span class="badge bg-success">With Purchases: {{ users_with_purchases }}</span>
+                <span class="badge bg-info">Total Revenue: ₹{{ total_revenue }}</span>
+            </div>
         </div>
 
         <!-- Table Start -->
@@ -20,83 +23,330 @@
                 <div class="col-sm-12">
                     <div class="card">
                         <div class="card-body">
-                            <div>
-                                <div class="table-responsive table-desi">
-                                    <table class="table table-striped all-package">
-                                        <thead>
-                                            <tr>
-                                                <th>#</th>
-                                                <th>Name</th>
-                                                <th>User Name</th>
-                                                <th>Email</th>
-                                                <th>Date</th>
-                                                
-                                            </tr>
-                                        </thead>
-                                        <tbody>
+                            <div class="table-responsive table-desi">
+                                <table class="table table-striped all-package">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 30px;"></th>
+                                            <th>#</th>
+                                            <th>Name</th>
+                                            <th>User Name</th>
+                                            <th>Email</th>
+                                            <th>Engagement</th>
+                                            <th>Purchase History</th>
+                                            <th>Products Bought</th>
+                                            <th>Registered Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for user_stat in users_with_stats %}
+                                        {% with user=user_stat.user %}
+                                        <tr class="{% if user_stat.has_purchased %}table-success{% endif %}">
+                                            <td>
+                                                <button class="btn btn-sm btn-link p-0 toggle-details" 
+                                                        data-target="user_{{ user.id }}" 
+                                                        type="button">
+                                                    <i class="fa fa-chevron-down"></i>
+                                                </button>
+                                            </td>
+                                            <td>{{ forloop.counter }}</td>
+                                            <td><strong>{{ user.name }}</strong></td>
+                                            <td>{{ user.user_name }}</td>
+                                            <td>{{ user.user_email }}</td>
                                             
-                                            {% for user in users %}
-                                            <tr>
-                                                <td>{{ forloop.counter }}</td>
-                                               
-
-                                                <td>{{ user.name }}</td>
-                                                <td>{{ user.user_name}}</td>
-
-                                                <td>{{user.user_email}}</td>
-
-                                                {% comment %} <td class="order-success">
-                                                    <span></span>
-                                                </td> {% endcomment %}
-
-                                                <td>{{ user.created_at }}</td>
+                                            <!-- Engagement Column -->
+                                            <td>
+                                                <div class="engagement-stats">
+                                                    <span class="badge bg-primary" title="Total Orders">
+                                                        <i class="fa fa-shopping-bag"></i> {{ user_stat.total_orders }}
+                                                    </span>
+                                                    <span class="badge bg-info" title="Cart Items">
+                                                        <i class="fa fa-shopping-cart"></i> {{ user_stat.total_cart_items }}
+                                                    </span>
+                                                    <span class="badge bg-secondary" title="Messages">
+                                                        <i class="fa fa-comments"></i> {{ user_stat.total_messages }}
+                                                    </span>
+                                                </div>
+                                            </td>
                                             
-                                                </td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                            <!-- Purchase History Column -->
+                                            <td>
+                                                {% if user_stat.has_purchased %}
+                                                    <div class="purchase-stats">
+                                                        <div class="mb-1">
+                                                            <strong class="text-success">
+                                                                <i class="fa fa-check-circle"></i> Purchased
+                                                            </strong>
+                                                        </div>
+                                                        <div class="small">
+                                                            <div><strong>Orders:</strong> {{ user_stat.total_orders }}</div>
+                                                            <div><strong>Items:</strong> {{ user_stat.total_items_purchased }}</div>
+                                                            <div><strong>Total Spent:</strong> ₹{{ user_stat.total_spent }}</div>
+                                                        </div>
+                                                    </div>
+                                                {% else %}
+                                                    <span class="badge bg-warning">
+                                                        <i class="fa fa-times-circle"></i> Never Purchased
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            
+                                            <!-- Products Bought Column -->
+                                            <td>
+                                                {% if user_stat.has_purchased %}
+                                                    <div class="products-bought">
+                                                        <span class="badge bg-success">
+                                                            {{ user_stat.unique_products_count }} Product{{ user_stat.unique_products_count|pluralize }}
+                                                        </span>
+                                                        <button class="btn btn-sm btn-link p-0 mt-1 view-products" 
+                                                                data-user-id="{{ user.id }}"
+                                                                type="button">
+                                                            <small>View Details</small>
+                                                        </button>
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            
+                                            <td>{{ user.created_at|date:"d M Y" }}</td>
+                                            
+                                            <td>
+                                                <a href="{% url 'order_list' %}?user={{ user.id }}" 
+                                                   class="btn btn-sm btn-primary" title="View Orders">
+                                                    <i class="fa fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- Expandable Details Row -->
+                                        <tr class="collapse" id="user_{{ user.id }}">
+                                            <td colspan="10">
+                                                <div class="p-3 bg-light">
+                                                    <div class="row">
+                                                        <!-- Engagement Details -->
+                                                        <div class="col-md-4 mb-3">
+                                                            <h6><i class="fa fa-chart-line text-primary"></i> Engagement</h6>
+                                                            <ul class="list-unstyled">
+                                                                <li><strong>Orders:</strong> {{ user_stat.total_orders }}</li>
+                                                                <li><strong>Cart Items:</strong> {{ user_stat.total_cart_items }}</li>
+                                                                <li><strong>Messages:</strong> {{ user_stat.total_messages }}</li>
+                                                            </ul>
+                                                        </div>
+                                                        
+                                                        <!-- Purchase Summary -->
+                                                        <div class="col-md-4 mb-3">
+                                                            <h6><i class="fa fa-shopping-bag text-success"></i> Purchase Summary</h6>
+                                                            <ul class="list-unstyled">
+                                                                <li><strong>Total Orders:</strong> {{ user_stat.total_orders }}</li>
+                                                                <li><strong>Total Items:</strong> {{ user_stat.total_items_purchased }}</li>
+                                                                <li><strong>Total Spent:</strong> ₹{{ user_stat.total_spent }}</li>
+                                                                <li><strong>Unique Products:</strong> {{ user_stat.unique_products_count }}</li>
+                                                            </ul>
+                                                        </div>
+                                                        
+                                                        <!-- Products Purchased Details -->
+                                                        <div class="col-md-4 mb-3">
+                                                            <h6><i class="fa fa-box text-info"></i> Products Purchased</h6>
+                                                            {% if user_stat.product_purchase_count %}
+                                                                <div style="max-height: 200px; overflow-y: auto;">
+                                                                    {% for product_id, product_data in user_stat.product_purchase_count.items %}
+                                                                    <div class="mb-2 p-2 border rounded">
+                                                                        <strong>{{ product_data.name }}</strong><br>
+                                                                        <small>
+                                                                            <span class="badge bg-primary">Bought {{ product_data.times }} time{{ product_data.times|pluralize }}</span><br>
+                                                                            <span>Quantity: {{ product_data.total_quantity }}</span><br>
+                                                                            <span>Amount: ₹{{ product_data.total_amount }}</span><br>
+                                                                            {% if product_data.last_purchased %}<span class="text-muted">Last: {{ product_data.last_purchased|date:"d M Y" }}</span>{% else %}<span class="text-muted">N/A</span>{% endif %}
+                                                                        </small>
+                                                                    </div>
+                                                                    {% endfor %}
+                                                                </div>
+                                                            {% else %}
+                                                                <p class="text-muted small">No products purchased</p>
+                                                            {% endif %}
+                                                        </div>
+                                                        
+                                                        <!-- All Purchases -->
+                                                        {% if user_stat.purchased_products_details %}
+                                                        <div class="col-12 mt-3">
+                                                            <h6><i class="fa fa-history"></i> All Purchase History ({{ user_stat.purchased_products_details|length }} items)</h6>
+                                                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                                                <table class="table table-sm table-bordered table-hover">
+                                                                    <thead class="table-light sticky-top">
+                                                                        <tr>
+                                                                            <th>#</th>
+                                                                            <th>Order ID</th>
+                                                                            <th>Product</th>
+                                                                            <th>Size</th>
+                                                                            <th>Color</th>
+                                                                            <th>Quantity</th>
+                                                                            <th>Price</th>
+                                                                            <th>Total</th>
+                                                                            <th>Date</th>
+                                                                            <th>Status</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        {% for purchase in user_stat.purchased_products_details %}
+                                                                        <tr>
+                                                                            <td>{{ forloop.counter }}</td>
+                                                                            <td>
+                                                                                <a href="{% url 'order_detail' purchase.order_id.order_id %}" class="text-primary">
+                                                                                    #{{ purchase.order_id.order_id }}
+                                                                                </a>
+                                                                            </td>
+                                                                            <td>
+                                                                                <strong>{{ purchase.subproduct_id.product.name }}</strong>
+                                                                                <br>
+                                                                                <small class="text-muted">{{ purchase.subproduct_id.product.category.name }}</small>
+                                                                            </td>
+                                                                            <td>
+                                                                                {% if purchase.size %}
+                                                                                    <span class="badge bg-secondary">{{ purchase.size }}</span>
+                                                                                {% else %}
+                                                                                    <span class="text-muted">-</span>
+                                                                                {% endif %}
+                                                                            </td>
+                                                                            <td>
+                                                                                {% if purchase.color %}
+                                                                                    <span class="badge bg-info">{{ purchase.color }}</span>
+                                                                                {% else %}
+                                                                                    <span class="text-muted">-</span>
+                                                                                {% endif %}
+                                                                            </td>
+                                                                            <td><strong>{{ purchase.quantity|default:"0" }}</strong></td>
+                                                                            <td>₹{{ purchase.price|default:"0" }}</td>
+                                                                            <td>
+                                                                                <strong>₹
+                                                                                {% if purchase.quantity and purchase.price %}
+                                                                                    {% widthratio purchase.quantity 1 purchase.price %}
+                                                                                {% else %}
+                                                                                    0
+                                                                                {% endif %}
+                                                                                </strong>
+                                                                            </td>
+                                                                            <td>{{ purchase.order_id.order_date|date:"d M Y"|default:"-" }}</td>
+                                                                            <td>
+                                                                                {% if purchase.order_id.order_status == 'Pending' %}
+                                                                                    <span class="badge bg-warning">{{ purchase.order_id.order_status }}</span>
+                                                                                {% elif purchase.order_id.order_status == 'Delivered' %}
+                                                                                    <span class="badge bg-success">{{ purchase.order_id.order_status }}</span>
+                                                                                {% elif purchase.order_id.order_status == 'Cancelled' %}
+                                                                                    <span class="badge bg-danger">{{ purchase.order_id.order_status }}</span>
+                                                                                {% elif purchase.order_id.order_status == 'Returned' %}
+                                                                                    <span class="badge bg-info">{{ purchase.order_id.order_status }}</span>
+                                                                                {% else %}
+                                                                                    <span class="badge bg-secondary">{{ purchase.order_id.order_status }}</span>
+                                                                                {% endif %}
+                                                                            </td>
+                                                                        </tr>
+                                                                        {% empty %}
+                                                                        <tr>
+                                                                            <td colspan="10" class="text-center text-muted">No purchase history</td>
+                                                                        </tr>
+                                                                        {% endfor %}
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endwith %}
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="10" class="text-center">No users found</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-
-                        <!-- Pagination Box Start -->
-                        <div class=" pagination-box">
-                            <nav class="ms-auto me-auto " aria-label="...">
-                                <ul class="pagination pagination-primary">
-                                    <li class="page-item disabled">
-                                        <a class="page-link" href="javascript:void(0)">Previous</a>
-                                    </li>
-
-                                    <li class="page-item active">
-                                        <a class="page-link" href="javascript:void(0)">1</a>
-                                    </li>
-
-                                    <li class="page-item">
-                                        <a class="page-link" href="javascript:void(0)">2</a>
-                                    </li>
-
-                                    <li class="page-item">
-                                        <a class="page-link" href="javascript:void(0)">3</a>
-                                    </li>
-
-                                    <li class="page-item">
-                                        <a class="page-link" href="javascript:void(0)">Next</a>
-                                    </li>
-                                </ul>
-                            </nav>
-                        </div>
-                        <!-- Pagination Box End -->
                     </div>
                 </div>
             </div>
         </div>
         <!-- Table End -->
-
-       
     </div>
-    <!-- Order section End -->
+    <!-- User section End -->
 </div>
 
+<style>
+.engagement-stats .badge,
+.purchase-stats .badge {
+    margin: 2px;
+    display: inline-block;
+}
+
+.products-bought {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.toggle-details {
+    cursor: pointer;
+    color: #667eea;
+    transition: transform 0.3s;
+}
+
+.toggle-details.collapsed i {
+    transform: rotate(-90deg);
+}
+
+.table-success {
+    background-color: #d1e7dd !important;
+}
+
+.purchase-stats {
+    font-size: 0.9rem;
+}
+
+.view-products {
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.view-products:hover {
+    text-decoration: underline;
+}
+
+.collapse {
+    transition: all 0.3s ease;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle expandable rows
+    document.querySelectorAll('.toggle-details').forEach(button => {
+        button.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const targetRow = document.getElementById(targetId);
+            const icon = this.querySelector('i');
+            
+            if (targetRow) {
+                const isCollapsed = targetRow.classList.contains('show');
+                
+                if (isCollapsed) {
+                    targetRow.classList.remove('show');
+                    icon.classList.remove('fa-chevron-up');
+                    icon.classList.add('fa-chevron-down');
+                    this.classList.remove('collapsed');
+                } else {
+                    targetRow.classList.add('show');
+                    icon.classList.remove('fa-chevron-down');
+                    icon.classList.add('fa-chevron-up');
+                    this.classList.add('collapsed');
+                }
+            }
+        });
+    });
+});
+</script>
 
 {% endblock %}

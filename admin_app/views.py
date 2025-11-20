@@ -742,11 +742,103 @@ def admin_logout(request):
 
 @login_required(login_url='/admin/login/?next=/admin_side/')
 def user_list(request):
-    users = User.objects.all().order_by('-created_at')
-    context = {
-        'users':users,
-    }
-    return render(request, 'user_list.html', context)
+    """Enhanced user list with engagement metrics and purchase history"""
+    try:
+        users = User.objects.all().order_by('-created_at')
+        
+        # Enrich users with engagement and purchase data
+        users_with_stats = []
+        for user in users:
+            # Engagement metrics
+            total_orders = placeOrder.objects.filter(user_id=user).count()
+            total_cart_items = Cart.objects.filter(uname=user).count()
+            total_messages = Message.objects.filter(user=user).count()
+            
+            # Purchase history
+            orders = placeOrder.objects.filter(user_id=user)
+            total_spent = sum([order.total_amount for order in orders if order.total_amount]) or 0
+            total_items_purchased = sum([order.total_quantity for order in orders if order.total_quantity]) or 0
+            
+            # Products purchased (unique products)
+            purchased_products = sub_placeorder.objects.filter(
+                order_id__user_id=user
+            ).values_list('subproduct_id__product', flat=True).distinct()
+            unique_products_count = len(set(purchased_products))
+            
+            # Product details (for expandable view)
+            purchased_products_details = sub_placeorder.objects.filter(
+                order_id__user_id=user
+            ).select_related('subproduct_id__product', 'order_id').order_by('-order_id__order_date')
+            
+            # Group by product to show purchase count
+            product_purchase_count = {}
+            for sub_order in purchased_products_details:
+                try:
+                    if not sub_order.subproduct_id or not sub_order.subproduct_id.product:
+                        continue
+                        
+                    product_id = sub_order.subproduct_id.product.id
+                    product_name = sub_order.subproduct_id.product.name
+                    
+                    if product_id not in product_purchase_count:
+                        product_purchase_count[product_id] = {
+                            'name': product_name,
+                            'times': 0,
+                            'total_quantity': 0,
+                            'total_amount': 0,
+                            'last_purchased': sub_order.order_id.order_date if sub_order.order_id and sub_order.order_id.order_date else None
+                        }
+                    
+                    product_purchase_count[product_id]['times'] += 1
+                    product_purchase_count[product_id]['total_quantity'] += sub_order.quantity or 0
+                    product_purchase_count[product_id]['total_amount'] += (sub_order.price or 0) * (sub_order.quantity or 0)
+                    
+                    if sub_order.order_id and sub_order.order_id.order_date:
+                        if product_purchase_count[product_id]['last_purchased'] is None or sub_order.order_id.order_date > product_purchase_count[product_id]['last_purchased']:
+                            product_purchase_count[product_id]['last_purchased'] = sub_order.order_id.order_date
+                except Exception as e:
+                    print(f"Error processing purchase for user {user.id}: {e}")
+                    continue
+            
+            users_with_stats.append({
+                'user': user,
+                'total_orders': total_orders,
+                'total_cart_items': total_cart_items,
+                'total_messages': total_messages,
+                'total_spent': total_spent,
+                'total_items_purchased': total_items_purchased,
+                'unique_products_count': unique_products_count,
+                'has_purchased': total_orders > 0,
+                'product_purchase_count': product_purchase_count,
+                'purchased_products_details': list(purchased_products_details),  # All purchases
+            })
+        
+        # Calculate summary statistics
+        total_users = len(users_with_stats)
+        users_with_purchases = sum(1 for u in users_with_stats if u['has_purchased'])
+        total_revenue = sum(u['total_spent'] for u in users_with_stats)
+        
+        context = {
+            'users_with_stats': users_with_stats,
+            'total_users': total_users,
+            'users_with_purchases': users_with_purchases,
+            'total_revenue': total_revenue,
+        }
+        return render(request, 'user_list.html', context)
+    except Exception as e:
+        print(f"Error in user_list view: {e}")
+        import traceback
+        print(traceback.format_exc())
+        messages.error(request, f'Error loading user list: {str(e)}')
+        # Fallback to simple user list
+        users = User.objects.all().order_by('-created_at')
+        context = {
+            'users_with_stats': [{'user': user, 'total_orders': 0, 'total_cart_items': 0, 'total_messages': 0, 'total_spent': 0, 'total_items_purchased': 0, 'unique_products_count': 0, 'has_purchased': False, 'product_purchase_count': {}, 'purchased_products_details': []} for user in users],
+            'total_users': users.count(),
+            'users_with_purchases': 0,
+            'total_revenue': 0,
+        }
+        return render(request, 'user_list.html', context)
 
 
 @login_required(login_url='/admin/login/?next=/admin_side/')
