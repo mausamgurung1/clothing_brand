@@ -1,27 +1,27 @@
 
 import datetime
-import os
-from django.shortcuts import get_object_or_404, render,redirect
-
-from django.contrib.auth import authenticate, login as auth_login, logout
-from django.contrib.auth.models import User as DjangoUser
-from django.contrib.auth.hashers import check_password
-from app.models import *
-from admin_app.models import *
-from django.contrib import messages
 import re
-from django.core.mail import send_mail
+
 from django.conf import settings
-from django.utils.html import strip_tags
-from django.template.loader import render_to_string
-# from admin_app.views import section
-from app.currency import INRToUSDConverter
+from django.contrib import messages
+from django.contrib.auth import authenticate, login as auth_login
 from django.contrib.auth import logout
+from django.contrib.auth.hashers import check_password
+from django.contrib.auth.models import User as DjangoUser
+from django.core.mail import send_mail
 from django.db.models import F
-from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse, JsonResponse
 # from xhtml2pdf import pisa
 from django.db.models import Sum
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, render, redirect
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from django.views.decorators.csrf import csrf_exempt
+
+from admin_app.models import *
+# from admin_app.views import section
+from app.currency import INRToUSDConverter
+from app.models import *
 from .utils import encode_id, decode_id
 
 
@@ -76,6 +76,7 @@ def most_buy_product():
 def home(request):
     # User.objects.all().delete()
     # print('asd')
+
     user_info = check_user(request)
     today = datetime.date.today()
     last_week = today - datetime.timedelta(days=30)
@@ -435,14 +436,22 @@ def check_stock_quantity(request):
 
 
 def check_stock(subproduct_id, selected_size, selected_color):
-    product_size_color = ProductSizeNColor.objects.get(product=subproduct_id, size__name=selected_size, color__name=selected_color)
-    stock_quantity = product_size_color.stock_quantity
-    return stock_quantity
+    variants = ProductSizeNColor.objects.filter(
+        product=subproduct_id,
+        size__name=selected_size,
+        color__name=selected_color
+    )
+
+    if not variants.exists():
+        return 0  # no stock
+
+    return variants.first().stock_quantity
 
 # ===============================================================================================================
 
 
-def addcart(request,id): 
+def addcart(request, id):
+    breakpoint()
     if 'user' not in request.session:
         return redirect('login')
     

@@ -133,7 +133,7 @@
                         {% if 'USD' in request.session.currency %}
                             $ {{ item.price_usd|floatformat:2 }}
                         {% else %}
-                            ₹ {{ item.price }}
+                            Rs {{ item.price }}
                         {% endif %}
                     </td>
                 </tr>
