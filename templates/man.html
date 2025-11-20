@@ -231,13 +231,13 @@
                                         <p class="product-description">
                                             {{ pro.product.description }}
                                         </p>
-                                            {% comment %} <h5 class="item-price">₹{{ pro.product.price }}</h5> {% endcomment %}
+                                            {% comment %} <h5 class="item-price">Rs{{ pro.product.price }}</h5> {% endcomment %}
                                                 
                                             <h5 class="item-price">
                                                 {% if 'USD' in request.session.currency %}
                                                 $ {{ pro.product.price_usd|floatformat:2 }}
                                             {% else %}
-                                                ₹ {{ pro.product.price_usd|floatformat:2 }}
+                                                Rs {{ pro.product.price_usd|floatformat:2 }}
                                             {% endif %}
                                         </div>
                                     

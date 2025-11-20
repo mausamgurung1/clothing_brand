@@ -146,7 +146,7 @@
                                                                         {% if 'USD' in request.session.currency %}
                                                                         $ {{ item.total_price_usd|floatformat:2 }}
                                                                 {% else %}
-                                                                        ₹ {{ item.total_price|floatformat:2 }}
+                                                                        Rs {{ item.total_price|floatformat:2 }}
                                                                 {% endif %}
                                                                     </span>
                                                                 </td>
@@ -155,7 +155,7 @@
                                                             {% comment %} <tr class="cart_item">
                                                                 <td class="product-name">Red Printed Round Neck T-Shirt<strong> x 2</strong></td>
                                                                 <td class="product-total">
-                                                                    <span class="product-price-amount amount"><span class="currency-sign">₹</span>598.00</span>
+                                                                    <span class="product-price-amount amount"><span class="currency-sign">Rs</span>598.00</span>
                                                                 </td>
                                                             </tr> {% endcomment %}
                                                         </tbody>
@@ -167,7 +167,7 @@
                                                                         {% if 'USD' in request.session.currency %}
                                                                         ${{ total_cart_price_usd|floatformat:2 }}
                                                                       {% else %}
-                                                                        ₹{{ total_cart_price|floatformat:2 }}
+                                                                        Rs{{ total_cart_price|floatformat:2 }}
                                                                       {% endif %} 
                                                                     </span></strong>
                                                                 </td>
@@ -183,7 +183,7 @@
                                                                                 <span class="woocommerce-Price-amount amount"> {% if 'USD' in request.session.currency %}
                                                                                     ${{ shipping_price_usd|floatformat:2 }}
                                                                                   {% else %}
-                                                                                    ₹{{ shipping_price|floatformat:2 }}
+                                                                                    Rs{{ shipping_price|floatformat:2 }}
                                                                                   {% endif %}</span></label></span></label>
                                                                         </li>
                                                                         <li>
@@ -204,7 +204,7 @@
                                                                         {% if 'USD' in request.session.currency %}
                                                         ${{ after_shipping_price_usd|floatformat:2 }}
                                                       {% else %}
-                                                        ₹{{ after_shipping_price|floatformat:2 }}
+                                                        Rs{{ after_shipping_price|floatformat:2 }}
                                                       {% endif %}</span>
                                                                 </td>
                                                             </tr>

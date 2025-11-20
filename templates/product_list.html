@@ -31,7 +31,7 @@
                                                 <th>#</th>
                                                 <th>Product Name</th>
                                                 <th>Category</th>
-                                                <th>Price (₹)</th>
+                                                <th>Price (Rs)</th>
                                                 <th>Variants</th>
                                                 <th>Total Stock</th>
                                                 <th>Low Stock</th>
@@ -60,7 +60,7 @@
                                                     {% endif %}
                                                 </td>
                                                 <td>{{ item.product.category }}</td>
-                                                <td>₹{{ item.product.price }}</td>
+                                                <td>Rs{{ item.product.price }}</td>
                                                 <td>
                                                     {% if item.variant_count > 0 %}
                                                         <a href="{% url 'product_variants' item.product.id %}" class="badge bg-info text-white">
