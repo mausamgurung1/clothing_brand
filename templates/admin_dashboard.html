@@ -36,7 +36,7 @@
                             <div class="media align-items-center static-top-widget">
                                 <div class="media-body p-0">
                                     <span class="m-0">Total Earnings</span>
-                                    <h4 class="mb-0">₹{{ total_earning|floatformat:0 }}</h4>
+                                    <h4 class="mb-0">Rs{{ total_earning|floatformat:0 }}</h4>
                                     {% if earning_growth > 0 %}
                                     <small class="text-success"><i data-feather="trending-up" class="me-1"></i>+{{ earning_growth }}% this month</small>
                                     {% endif %}
@@ -245,7 +245,7 @@
                                             <td><strong>#{{ order.order_id }}</strong></td>
                                             <td>{{ order.user_id.user_name|default:"N/A" }}</td>
                                             <td>{{ order.order_date|date:"M d, Y" }}</td>
-                                            <td>₹{{ order.total_amount|default:"0" }}</td>
+                                            <td>Rs{{ order.total_amount|default:"0" }}</td>
                                             <td>
                                                 {% if order.order_status == 'Pending' %}
                                                     <span class="badge bg-warning">{{ order.order_status }}</span>
@@ -462,7 +462,7 @@
 
         var earningChartOptions = {
             series: [{
-                name: 'Earnings (₹)',
+                name: 'Earnings (Rs)',
                 data: data
             }],
             chart: {
@@ -480,24 +480,24 @@
             dataLabels: {
                 enabled: true,
                 formatter: function (val) {
-                    return '₹' + Math.round(val);
+                    return 'Rs' + Math.round(val);
                 }
             },
             xaxis: {
                 categories: xValues
             },
             yaxis: {
-                title: { text: 'Earnings (₹)' },
+                title: { text: 'Earnings (Rs)' },
                 labels: {
                     formatter: function (val) {
-                        return '₹' + Math.round(val);
+                        return 'Rs' + Math.round(val);
                     }
                 }
             },
             tooltip: {
                 y: {
                     formatter: function (val) {
-                        return '₹' + Math.round(val);
+                        return 'Rs' + Math.round(val);
                     }
                 }
             }

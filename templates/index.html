@@ -261,7 +261,7 @@
                             {% if 'USD' in request.session.currency %}
                             $ {{ product.product.price_usd|floatformat:2 }}
                         {% else %}
-                            ₹ {{ product.product.price_usd|floatformat:2 }}
+                            Rs {{ product.product.price_usd|floatformat:2 }}
                         {% endif %}    
                         </h5>
                     </div>
@@ -392,7 +392,7 @@
                             {% if 'USD' in request.session.currency %}
                             $ {{ product.product.price_usd|floatformat:2 }}
                         {% else %}
-                            ₹ {{ product.product.price_usd|floatformat:2 }}
+                            Rs {{ product.product.price_usd|floatformat:2 }}
                         {% endif %}
                         </h5>
                     </div>

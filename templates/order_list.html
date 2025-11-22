@@ -84,7 +84,7 @@
                                                 </td> {% endcomment %}
 
                                                 <td>{{ order.total_quantity }}</td>
-                                                <td>₹{{ order.total_amount}}</td>
+                                                <td>Rs{{ order.total_amount}}</td>
                                                 <td>
                                                     <form method="post" action="{% url 'update_order_status' order.order_id %}" class="d-inline" id="statusForm{{ order.order_id }}">
                                                         {% csrf_token %}
