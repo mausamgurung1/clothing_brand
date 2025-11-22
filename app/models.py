@@ -153,6 +153,41 @@ class Visitor(models.Model):
     count = models.IntegerField(default=0)
 
 
+class Review(models.Model):
+    """Product Review Model"""
+    RATING_CHOICES = [
+        (1, '1 Star'),
+        (2, '2 Stars'),
+        (3, '3 Stars'),
+        (4, '4 Stars'),
+        (5, '5 Stars'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='reviews')
+    product = models.ForeignKey(SubProduct, on_delete=models.CASCADE, related_name='reviews')
+    rating = models.IntegerField(choices=RATING_CHOICES, default=5)
+    comment = models.TextField(null=True, blank=True)
+    reviewer_name = models.CharField(max_length=100, null=True, blank=True)
+    reviewer_email = models.CharField(max_length=100, null=True, blank=True)
+    is_verified_purchase = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = 'Reviews'
+        # Note: unique_together requires both fields to be non-null, so we can't use it here
+        # since reviewer_name/reviewer_email can be used for guest reviews
+    
+    def __str__(self):
+        reviewer = self.user.user_name if self.user else self.reviewer_name
+        return f'{reviewer} - {self.product.product.name} - {self.rating} Stars'
+    
+    def get_star_percentage(self):
+        """Get star rating as percentage for CSS width"""
+        return (self.rating / 5) * 100
+
+
     
     
 @receiver(post_save, sender=User_1)

@@ -115,13 +115,46 @@
             $("body").removeClass("offcanvas");
         }
     });
-    $(".mode").on("click", function () {
-        $('.mode i').toggleClass("fa-moon-o").toggleClass("fa-lightbulb-o");
-        $('body').toggleClass("dark-only");
-        var color = $(this).attr("data-attr");
-        localStorage.setItem('body', 'dark-only');
+    // Load dark mode preference on page load
+    $(document).ready(function() {
+        var darkMode = localStorage.getItem('darkMode');
+        var darkModeIcon = $('#darkModeIcon');
+        
+        if (darkMode === 'true') {
+            $('body').addClass('dark-only');
+            if (darkModeIcon.length) {
+                darkModeIcon.removeClass('lnr-moon').addClass('lnr-sun');
+            }
+        } else {
+            $('body').removeClass('dark-only');
+            if (darkModeIcon.length) {
+                darkModeIcon.removeClass('lnr-sun').addClass('lnr-moon');
+            }
+        }
+    });
 
-        ////ck editor body dark
+    // Dark mode toggle
+    $(".mode").on("click", function () {
+        var isDark = $('body').hasClass('dark-only');
+        var darkModeIcon = $('#darkModeIcon');
+        
+        if (isDark) {
+            // Switch to light mode
+            $('body').removeClass('dark-only');
+            if (darkModeIcon.length) {
+                darkModeIcon.removeClass('lnr-sun').addClass('lnr-moon');
+            }
+            localStorage.setItem('darkMode', 'false');
+        } else {
+            // Switch to dark mode
+            $('body').addClass('dark-only');
+            if (darkModeIcon.length) {
+                darkModeIcon.removeClass('lnr-moon').addClass('lnr-sun');
+            }
+            localStorage.setItem('darkMode', 'true');
+        }
+
+        // CK editor body dark
         $('.cke_wysiwyg_frame').contents().find('body').each(function () {
             if ($("body").hasClass("dark-only")) {
                 $('.cke_wysiwyg_frame').contents().find('body').css({

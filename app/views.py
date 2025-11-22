@@ -103,10 +103,37 @@ def home(request):
 
 
 
+    # Get reviews for products on homepage
+    from django.db.models import Avg, Count
+    
+    # Create dictionaries for quick lookup
+    new_arrival_reviews_dict = {}
+    for product in new_arrival:
+        reviews = Review.objects.filter(product=product)
+        avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+        review_count = reviews.count()
+        new_arrival_reviews_dict[product.id] = {
+            'avg_rating': round(avg_rating, 1),
+            'review_count': review_count,
+        }
+    
+    # Create dictionaries for quick lookup
+    most_buy_reviews_dict = {}
+    for product in most_buy:
+        reviews = Review.objects.filter(product=product)
+        avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+        review_count = reviews.count()
+        most_buy_reviews_dict[product.id] = {
+            'avg_rating': round(avg_rating, 1),
+            'review_count': review_count,
+        }
+    
     context = { **user_info,
                 'new_arrival':new_arrival, 
                 'popular_products':most_buy,
                 'visitor':count,
+                'new_arrival_reviews_dict': new_arrival_reviews_dict,
+                'most_buy_reviews_dict': most_buy_reviews_dict,
                }
     return render(request, 'index.html', context)
 
@@ -276,6 +303,43 @@ def mark_reply_as_seen(request, message_id):
             return JsonResponse({'success': False, 'message': str(e)})
     
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+# ===============================================================================================================
+# Review Views
+# ===============================================================================================================
+
+def get_product_reviews(request, product_id):
+    """Get all reviews for a specific product"""
+    try:
+        product = SubProduct.objects.get(pk=product_id)
+        reviews = Review.objects.filter(product=product).order_by('-created_at')
+        
+        reviews_list = []
+        for review in reviews:
+            reviews_list.append({
+                'id': review.id,
+                'user_name': review.user.user_name if review.user else None,
+                'reviewer_name': review.reviewer_name,
+                'rating': review.rating,
+                'comment': review.comment,
+                'is_verified_purchase': review.is_verified_purchase,
+                'created_at': review.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'reviews': reviews_list,
+            'total_reviews': len(reviews_list),
+        })
+        
+    except SubProduct.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Product not found'})
+    except Exception as e:
+        print(f"Error getting reviews: {e}")
+        import traceback
+        print(traceback.format_exc())
+        return JsonResponse({'success': False, 'message': f'Error getting reviews: {str(e)}'})
 
 
 def about(request):
@@ -570,8 +634,17 @@ def currancy_cart(temp_,currency_type):
 
         if 'USD' in currency_type:
             for product__ in temp_:
-                product__.subproduct.product.price_usd = currency_converter.convert_inr_to_usd(product__.subproduct.product.price)
-                product__.total_price_usd = product__.quantity * product__.subproduct.product.price_usd
+                # Initialize total_price_usd to None first
+                product__.total_price_usd = None
+                # Try to convert price to USD
+                price_usd = currency_converter.convert_inr_to_usd(product__.subproduct.product.price)
+                if price_usd is not None:
+                    product__.subproduct.product.price_usd = price_usd
+                    product__.total_price_usd = product__.quantity * price_usd
+                else:
+                    # If conversion fails, set price_usd to None and keep total_price_usd as None
+                    product__.subproduct.product.price_usd = None
+                    product__.total_price_usd = None
                 # Clear the total_price field when using USD
                 product__.total_price = None
         else:
@@ -584,6 +657,12 @@ def currancy_cart(temp_,currency_type):
 
     except Exception as e:
         print(e)
+        # Ensure total_price_usd is set even if exception occurs
+        for product__ in temp_:
+            if not hasattr(product__, 'total_price_usd'):
+                product__.total_price_usd = None
+            if not hasattr(product__, 'total_price'):
+                product__.total_price = product__.quantity * product__.subproduct.product.price
 
 
 def cart(request):
@@ -617,15 +696,25 @@ def cart(request):
 
     currancy_cart(cart_obj,request.session.get('currency'))
     
+    currency_type = request.session.get('currency', '')
+    
     for item in cart_obj:
         item.sizes = set(item.subproduct.product_size_color.values_list('size__name', flat=True))
         item.colors = set(item.subproduct.product_size_color.values_list('color__name', flat=True))
-        item.total_price = item.quantity * item.subproduct.product.price
+        # Only recalculate total_price if not using USD (to avoid overwriting)
+        if 'USD' not in currency_type:
+            item.total_price = item.quantity * item.subproduct.product.price
+        # Ensure total_price_usd is always set (even if None)
+        if not hasattr(item, 'total_price_usd'):
+            item.total_price_usd = None
+        # Ensure total_price is always set (even if None)
+        if not hasattr(item, 'total_price'):
+            item.total_price = item.quantity * item.subproduct.product.price
     
     
     
     total_cart_price = sum([item.total_price for item in cart_obj if item.total_price is not None])
-    total_cart_price_usd = sum([item.total_price_usd for item in cart_obj if item.total_price_usd is not None])
+    total_cart_price_usd = sum([getattr(item, 'total_price_usd', None) or 0 for item in cart_obj if getattr(item, 'total_price_usd', None) is not None])
 
     shipping_price = 50
     shipping_price_usd = 1
@@ -705,13 +794,24 @@ def checkout(request):
     cart_obj = Cart.objects.filter(uname=user)
     
 
-    for item in cart_obj:
-        item.total_price = item.quantity * item.subproduct.product.price
+    currency_type = request.session.get('currency', '')
     
-    currancy_cart(cart_obj,request.session.get('currency'))
+    for item in cart_obj:
+        # Only set total_price if not using USD (will be set by currancy_cart for USD)
+        if 'USD' not in currency_type:
+            item.total_price = item.quantity * item.subproduct.product.price
+    
+    currancy_cart(cart_obj, request.session.get('currency'))
+    
+    # Ensure attributes are set after currency conversion
+    for item in cart_obj:
+        if not hasattr(item, 'total_price_usd'):
+            item.total_price_usd = None
+        if not hasattr(item, 'total_price'):
+            item.total_price = item.quantity * item.subproduct.product.price
 
     total_cart_price = sum([item.total_price for item in cart_obj if item.total_price is not None])
-    total_cart_price_usd = sum([item.total_price_usd for item in cart_obj if item.total_price_usd is not None])
+    total_cart_price_usd = sum([getattr(item, 'total_price_usd', None) or 0 for item in cart_obj if getattr(item, 'total_price_usd', None) is not None])
 
     shipping_price = 50
     shipping_price_usd = 1

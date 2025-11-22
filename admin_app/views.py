@@ -886,13 +886,152 @@ def contact_list(request):
 
 @login_required(login_url='/admin/login/?next=/admin_side/')
 def message_list(request):
-    """List all messages for admin"""
-    messages_list = Message.objects.all().order_by('-created_at')
+    """List all messages for admin - WhatsApp style with grouped conversations"""
+    from django.db.models import Max, Q
+    
+    # Get all messages
+    all_messages = Message.objects.all()
     unread_count = Message.objects.filter(is_seen=False).count()
     unread_with_replies = Message.objects.filter(reply__isnull=False, reply_seen=False).count()
     
+    # Group conversations by user (logged-in users) or email/name (guest users)
+    conversations = {}
+    
+    for msg in all_messages:
+        if msg.user:
+            # Logged-in user - use user ID as key
+            key = f"user_{msg.user.id}"
+            if key not in conversations:
+                conversations[key] = {
+                    'user': msg.user,
+                    'user_name': msg.user.user_name,
+                    'user_email': msg.user.user_email,
+                    'sender_name': None,
+                    'sender_email': None,
+                    'latest_message': msg,
+                    'unread_count': 0,
+                    'total_messages': 0,
+                    'last_activity': msg.created_at,
+                }
+            conversations[key]['total_messages'] += 1
+            if msg.created_at > conversations[key]['last_activity']:
+                conversations[key]['latest_message'] = msg
+                conversations[key]['last_activity'] = msg.created_at
+            if not msg.is_seen:
+                conversations[key]['unread_count'] += 1
+        else:
+            # Guest user - use email+name as key
+            key = f"guest_{msg.sender_email}_{msg.sender_name}"
+            if key not in conversations:
+                conversations[key] = {
+                    'user': None,
+                    'user_name': None,
+                    'user_email': None,
+                    'sender_name': msg.sender_name,
+                    'sender_email': msg.sender_email,
+                    'latest_message': msg,
+                    'unread_count': 0,
+                    'total_messages': 0,
+                    'last_activity': msg.created_at,
+                }
+            conversations[key]['total_messages'] += 1
+            if msg.created_at > conversations[key]['last_activity']:
+                conversations[key]['latest_message'] = msg
+                conversations[key]['last_activity'] = msg.created_at
+            if not msg.is_seen:
+                conversations[key]['unread_count'] += 1
+    
+    # Convert to list and sort by last activity (most recent first)
+    conversations_list = sorted(conversations.values(), key=lambda x: x['last_activity'], reverse=True)
+    
+    # Get the selected conversation (from URL parameter)
+    selected_message_id = request.GET.get('chat', None)
+    selected_conversation = None
+    conversation_messages = []
+    selected_user_id = None
+    selected_sender_email = None
+    selected_sender_name = None
+    
+    if selected_message_id:
+        try:
+            selected_message = Message.objects.get(pk=selected_message_id)
+            # Get all messages from the same user
+            if selected_message.user:
+                conversation_messages = Message.objects.filter(user=selected_message.user).order_by('created_at')
+                selected_user_id = selected_message.user.id
+            else:
+                conversation_messages = Message.objects.filter(
+                    sender_email=selected_message.sender_email,
+                    sender_name=selected_message.sender_name,
+                    user__isnull=True
+                ).order_by('created_at')
+                selected_sender_email = selected_message.sender_email
+                selected_sender_name = selected_message.sender_name
+            
+            # Find the selected conversation and mark as active
+            for conv in conversations_list:
+                if selected_user_id and conv['user'] and conv['user'].id == selected_user_id:
+                    selected_conversation = conv
+                    conv['is_active'] = True
+                elif (selected_sender_email and not conv['user'] and 
+                      conv['sender_email'] == selected_sender_email and
+                      conv['sender_name'] == selected_sender_name):
+                    selected_conversation = conv
+                    conv['is_active'] = True
+                else:
+                    conv['is_active'] = False
+            
+            # Handle POST request for replying (non-AJAX fallback)
+            if request.method == 'POST':
+                reply_text = request.POST.get('reply', '').strip()
+                reply_to_message_id = request.POST.get('reply_to_message_id', selected_message_id)
+                if reply_text:
+                    try:
+                        reply_to_message = Message.objects.get(pk=reply_to_message_id)
+                        reply_to_message.reply = reply_text
+                        reply_to_message.reply_seen = False
+                        reply_to_message.save()
+                    except Message.DoesNotExist:
+                        pass
+            
+            # Mark as seen when viewing (after handling POST)
+            conversation_messages.filter(is_seen=False).update(is_seen=True)
+            
+            # Reload conversation messages to ensure we have the latest data
+            if selected_message.user:
+                conversation_messages = Message.objects.filter(user=selected_message.user).order_by('created_at')
+            else:
+                conversation_messages = Message.objects.filter(
+                    sender_email=selected_message.sender_email,
+                    sender_name=selected_message.sender_name,
+                    user__isnull=True
+                ).order_by('created_at')
+        except Message.DoesNotExist:
+            pass
+    
+    # Ensure all conversations have is_active flag
+    for conv in conversations_list:
+        if 'is_active' not in conv:
+            conv['is_active'] = False
+    
+    # Prepare conversation messages data
+    conversation_data = []
+    for msg in conversation_messages:
+        conversation_data.append({
+            'id': msg.id,
+            'message': msg.message,
+            'reply': msg.reply,
+            'is_seen': msg.is_seen,
+            'reply_seen': msg.reply_seen,
+            'created_at': msg.created_at,
+            'updated_at': msg.updated_at,
+        })
+    
     context = {
-        'messages_list': messages_list,
+        'conversations': conversations_list,
+        'selected_conversation': selected_conversation,
+        'conversation_messages': conversation_data,
+        'selected_message_id': selected_message_id,
         'unread_count': unread_count,
         'unread_with_replies': unread_with_replies,
     }
@@ -901,27 +1040,66 @@ def message_list(request):
 
 @login_required(login_url='/admin/login/?next=/admin_side/')
 def message_detail(request, message_id):
-    """View and reply to a specific message"""
+    """View and reply to a specific message - WhatsApp style chat"""
     try:
         message = Message.objects.get(pk=message_id)
         
-        # Mark as seen when admin views it
-        if not message.is_seen:
-            message.mark_as_seen()
+        # Get user identifier (user ID or email/name for guests)
+        user = message.user
+        sender_email = message.sender_email
+        sender_name = message.sender_name
+        
+        # Get all messages from the same user (conversation thread)
+        if user:
+            # For logged-in users, get all messages by user
+            conversation_messages = Message.objects.filter(user=user).order_by('created_at')
+        else:
+            # For guest users, get all messages by email and name
+            conversation_messages = Message.objects.filter(
+                sender_email=sender_email,
+                sender_name=sender_name,
+                user__isnull=True
+            ).order_by('created_at')
+        
+        # Mark all unread messages as seen when admin views the conversation
+        conversation_messages.filter(is_seen=False).update(is_seen=True)
         
         if request.method == 'POST':
             reply_text = request.POST.get('reply', '').strip()
-            if reply_text:
-                message.reply = reply_text
-                message.reply_seen = False  # Reset seen status when new reply is added
-                message.save()
-                messages.success(request, 'Reply sent successfully!')
-                return redirect('message_detail', message_id=message_id)
-            else:
+            reply_to_message_id = request.POST.get('reply_to_message_id', message_id)
+            
+            if not reply_text:
                 messages.error(request, 'Reply cannot be empty')
+            else:
+                try:
+                    # Get the specific message to reply to
+                    reply_to_message = Message.objects.get(pk=reply_to_message_id)
+                    reply_to_message.reply = reply_text
+                    reply_to_message.reply_seen = False  # Reset seen status when new reply is added
+                    reply_to_message.save()
+                    messages.success(request, 'Reply sent successfully!')
+                    return redirect('message_detail', message_id=message_id)
+                except Message.DoesNotExist:
+                    messages.error(request, 'Message not found')
+        
+        # Prepare conversation data for WhatsApp-style display
+        conversation_data = []
+        for msg in conversation_messages:
+            conversation_data.append({
+                'id': msg.id,
+                'message': msg.message,
+                'reply': msg.reply,
+                'is_seen': msg.is_seen,
+                'reply_seen': msg.reply_seen,
+                'created_at': msg.created_at,
+                'updated_at': msg.updated_at,
+            })
         
         context = {
             'message_obj': message,
+            'conversation_messages': conversation_data,
+            'user_name': user.user_name if user else sender_name,
+            'user_email': user.user_email if user else sender_email,
         }
         return render(request, 'message_detail.html', context)
         
@@ -937,19 +1115,24 @@ def reply_message_ajax(request, message_id):
         try:
             message = Message.objects.get(pk=message_id)
             reply_text = request.POST.get('reply', '').strip()
+            reply_to_message_id = request.POST.get('reply_to_message_id', message_id)
             
             if not reply_text:
                 return JsonResponse({'success': False, 'message': 'Reply cannot be empty'})
             
-            message.reply = reply_text
-            message.reply_seen = False  # Reset seen status
-            message.save()
+            # Get the specific message to reply to
+            reply_to_message = Message.objects.get(pk=reply_to_message_id)
+            reply_to_message.reply = reply_text
+            reply_to_message.reply_seen = False  # Reset seen status
+            reply_to_message.save()
             
             return JsonResponse({
                 'success': True,
                 'message': 'Reply sent successfully!',
                 'reply': reply_text,
-                'created_at': message.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+                'message_id': reply_to_message.id,
+                'created_at': reply_to_message.updated_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'time': reply_to_message.updated_at.strftime('%H:%M')
             })
             
         except Message.DoesNotExist:
@@ -958,6 +1141,53 @@ def reply_message_ajax(request, message_id):
             return JsonResponse({'success': False, 'message': str(e)})
     
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+@login_required(login_url='/admin/login/?next=/admin_side/')
+def get_conversation_ajax(request, message_id):
+    """AJAX endpoint to get all messages in a conversation thread"""
+    try:
+        message = Message.objects.get(pk=message_id)
+        
+        # Get user identifier
+        user = message.user
+        sender_email = message.sender_email
+        sender_name = message.sender_name
+        
+        # Get all messages from the same user (conversation thread)
+        if user:
+            conversation_messages = Message.objects.filter(user=user).order_by('created_at')
+        else:
+            conversation_messages = Message.objects.filter(
+                sender_email=sender_email,
+                sender_name=sender_name,
+                user__isnull=True
+            ).order_by('created_at')
+        
+        # Prepare conversation data
+        conversation_data = []
+        for msg in conversation_messages:
+            conversation_data.append({
+                'id': msg.id,
+                'message': msg.message,
+                'reply': msg.reply,
+                'is_seen': msg.is_seen,
+                'reply_seen': msg.reply_seen,
+                'created_at': msg.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'created_at_time': msg.created_at.strftime('%H:%M'),
+                'updated_at': msg.updated_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'updated_at_time': msg.updated_at.strftime('%H:%M'),
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'messages': conversation_data
+        })
+        
+    except Message.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Message not found'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
 
 
 @login_required(login_url='/admin/login/?next=/admin_side/')

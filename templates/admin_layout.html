@@ -99,8 +99,8 @@
                         </li>
                       
                         <li>
-                            <div class="mode">
-                                <span class="lnr lnr-moon"></span>
+                            <div class="mode" id="darkModeToggle" style="cursor: pointer;">
+                                <span class="lnr lnr-moon" id="darkModeIcon"></span>
                             </div>
                         </li>
 
@@ -335,6 +335,17 @@
    
     <!-- Theme js -->
     <script src="{% static 'assets/js/script.js'%}"></script>
+
+    <!-- Dark Mode Persistence Script -->
+    <script>
+        // Apply dark mode immediately on page load (before DOM ready to prevent flash)
+        (function() {
+            var darkMode = localStorage.getItem('darkMode');
+            if (darkMode === 'true') {
+                document.body.classList.add('dark-only');
+            }
+        })();
+    </script>
 
 </body>
 

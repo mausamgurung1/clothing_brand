@@ -59,6 +59,7 @@ urlpatterns = [
     path('message_list/', message_list, name='message_list'),
     path('message_detail/<int:message_id>/', message_detail, name='message_detail'),
     path('reply_message_ajax/<int:message_id>/', reply_message_ajax, name='reply_message_ajax'),
+    path('get_conversation_ajax/<int:message_id>/', get_conversation_ajax, name='get_conversation_ajax'),
     path('mark_message_seen_ajax/<int:message_id>/', mark_message_seen_ajax, name='mark_message_seen_ajax'),
     path('get_unread_count/', get_unread_count, name='get_unread_count'),
     
@@ -66,6 +67,9 @@ urlpatterns = [
     path('send_message/', send_message, name='send_message'),
     path('get_messages/', get_messages, name='get_messages'),
     path('mark_reply_as_seen/<int:message_id>/', mark_reply_as_seen, name='mark_reply_as_seen'),
+    
+    # Review URLs
+    path('get_product_reviews/<int:product_id>/', get_product_reviews, name='get_product_reviews'),
     
     path('order_detail/<int:order_id>', order_detail, name='order_detail'),
     path('order_delete/<int:order_id>', order_delete, name='order_delete'),

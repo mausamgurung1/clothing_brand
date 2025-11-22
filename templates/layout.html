@@ -77,7 +77,7 @@
                 <div class="header-topbar-inner">
                     <!--Topbar Left-->
                     <div class="topbar-left hidden-sm-down">
-                        <div class="phone" style="color: #34b79d; font-weight: 400;">Welcome to StyleX</div>
+                        <div class="phone" style="color: #34b79d; font-weight: 400;">Welcome to Baabuu Clothing</div>
                     </div>
                     <!--End Topbar Left-->
 
@@ -146,7 +146,7 @@
                         <a href="{% url "home" %}">
                             
                             
-                            <img src="{% static 'img/stylex2.png' %}" alt="StyleX" />
+                            <img src="{% static 'img/stylex2.png' %}" alt="Baabuu Clothing" />
                         </a>
                     </div>
                     <!-- End Logo -->
@@ -226,55 +226,118 @@
             <!-- Footer Info -->
             <div class="container">
                 <div class="row">
-                    <div class="col-lg-3 col-md-12 col-sm-12 mb-sm-45">
+                    <!-- Brand Section -->
+                    <div class="col-lg-3 col-md-6 col-sm-12 mb-sm-45">
                         <div class="footer-block about-us-block">
-                            <img src="{% static "img/stylex2.png" %}" width="125" alt="">
-                            <p>
-                                Elevate your style with Styelx: Where fashion meets innovation. Shop the latest trends effortlessly!
+                            <div class="footer-logo">
+                                <i class="fa fa-shopping-bag" style="color: #e22454; font-size: 24px; margin-right: 8px;"></i>
+                                <span style="color: #fff; font-size: 24px; font-weight: bold;">Baabuu Clothing</span>
+                            </div>
+                            <p style="margin-top: 20px; color: #acacac; line-height: 1.6;">
+                                3298 Grant Street Longview, TX United Kingdom 75601
                             </p>
-                            <ul class="footer-social-icon list-none-ib">
+                            <ul style="list-style: none; padding: 0; margin: 15px 0; color: #acacac;">
+                                <li style="margin-bottom: 8px;">
+                                    <i class="fa fa-phone" style="margin-right: 8px;"></i>1-202-555-0106
+                                </li>
+                                <li style="margin-bottom: 8px;">
+                                    <i class="fa fa-envelope" style="margin-right: 8px;"></i>
+                                    <a href="mailto:help@shopper.com" style="color: #acacac; text-decoration: none;">help@shopper.com</a>
+                                </li>
+                            </ul>
+                            <ul class="footer-social-icon list-none-ib" style="margin-top: 20px;">
                                 <li><a href="" target="_blank"><i class="fa fa-facebook" aria-hidden="true"></i></a></li>
                                 <li><a href="" target="_blank"><i class="fa fa-twitter" aria-hidden="true"></i></a></li>
+                                <li><a href="" target="_blank"><i class="fa fa-youtube-play" aria-hidden="true"></i></a></li>
                                 <li><a href="" target="_blank"><i class="fa fa-instagram" aria-hidden="true"></i></a></li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-md-12 col-sm-12 mb-sm-45">
-                        <div class="footer-block information-block">
-                            <h6>Information</h6>
-                            <ul>
-                                <li><a href="/man/">MAN</a></li>
-                                <li><a href="/woman/">WOMAN</a></li>
-                                <li><a href="/kids/">KIDS</a></li>
-                                {% comment %} <li><a href="/about">About Us</a></li> {% endcomment %}
-                                <li><a href="/contact">Contact Us</a></li>
+                                <li><a href="" target="_blank"><i class="fa fa-linkedin" aria-hidden="true"></i></a></li>
                             </ul>
                         </div>
                     </div>
                     
-                   
-                    <div class="col-lg-3 col-md-12 col-sm-12">
-                        <div class="footer-block contact-block">
-                            <h6>Contact</h6>
-                            <ul>
-                                <li><i class="fa fa-map-marker" aria-hidden="true"></i>StyleX Fashion, Ahmdabad
-                                    <br>
-                                    Gujarat, India</li>
-                                    
-                                <li><i class="fa fa-envelope" aria-hidden="true"></i><a href="mailto:info@sky.com">md.tach18@gmail.com</a></li>
-                                <li><i class="fa fa-phone" aria-hidden="true"></i>+91 90167555950</li>
-                              
+                    <!-- SUPPORTS Section -->
+                    <div class="col-lg-2 col-md-6 col-sm-12 mb-sm-45">
+                        <div class="footer-block information-block">
+                            <h6 style="color: #fff; font-weight: bold; margin-bottom: 20px;">SUPPORTS</h6>
+                            <ul style="list-style: none; padding: 0;">
+                                <li style="margin-bottom: 10px;"><a href="/contact" style="color: #acacac; text-decoration: none;">Contact Us</a></li>
+                                <li style="margin-bottom: 10px;"><a href="/about" style="color: #acacac; text-decoration: none;">About Page</a></li>
+                                <li style="margin-bottom: 10px;"><a href="#" style="color: #acacac; text-decoration: none;">Size Guide</a></li>
+                                <li style="margin-bottom: 10px;"><a href="#" style="color: #acacac; text-decoration: none;">Shipping & Returns</a></li>
+                                <li style="margin-bottom: 10px;"><a href="#" style="color: #acacac; text-decoration: none;">FAQ's Page</a></li>
+                                <li style="margin-bottom: 10px;"><a href="#" style="color: #acacac; text-decoration: none;">Privacy</a></li>
                             </ul>
                         </div>
                     </div>
-                    <div class="col-lg-3 col-md-12 col-sm-12">
-                        <div class="footer-block contact-block">
-                           
-                            <div class="four col-md-3">
-                                <div class="counter-box">
-                                    <i class="fa fa-group ls" ></i>
-                                    <span class="counter">{{visitor}}</span>
-                                   
+                    
+                    <!-- SHOP Section -->
+                    <div class="col-lg-2 col-md-6 col-sm-12 mb-sm-45">
+                        <div class="footer-block information-block">
+                            <h6 style="color: #fff; font-weight: bold; margin-bottom: 20px;">SHOP</h6>
+                            <ul style="list-style: none; padding: 0;">
+                                <li style="margin-bottom: 10px;"><a href="/man/" style="color: #acacac; text-decoration: none;">Men's Shopping</a></li>
+                                <li style="margin-bottom: 10px;"><a href="/woman/" style="color: #acacac; text-decoration: none;">Women's Shopping</a></li>
+                                <li style="margin-bottom: 10px;"><a href="/kids/" style="color: #acacac; text-decoration: none;">Kids's Shopping</a></li>
+                                <li style="margin-bottom: 10px;"><a href="#" style="color: #acacac; text-decoration: none;">Furniture</a></li>
+                                <li style="margin-bottom: 10px;"><a href="#" style="color: #acacac; text-decoration: none;">Discounts</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- COMPANY Section -->
+                    <div class="col-lg-2 col-md-6 col-sm-12 mb-sm-45">
+                        <div class="footer-block information-block">
+                            <h6 style="color: #fff; font-weight: bold; margin-bottom: 20px;">COMPANY</h6>
+                            <ul style="list-style: none; padding: 0;">
+                                <li style="margin-bottom: 10px;"><a href="/about" style="color: #acacac; text-decoration: none;">About</a></li>
+                                <li style="margin-bottom: 10px;"><a href="#" style="color: #acacac; text-decoration: none;">Blog</a></li>
+                                <li style="margin-bottom: 10px;"><a href="#" style="color: #acacac; text-decoration: none;">Affiliate</a></li>
+                                <li style="margin-bottom: 10px;"><a href="/login" style="color: #acacac; text-decoration: none;">Login</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- SUBSCRIBE Section -->
+                    <div class="col-lg-3 col-md-6 col-sm-12 mb-sm-45">
+                        <div class="footer-block subscribe-block">
+                            <h6 style="color: #fff; font-weight: bold; margin-bottom: 20px;">SUBSCRIBE</h6>
+                            <p style="color: #acacac; margin-bottom: 20px; line-height: 1.6;">
+                                Receive updates, hot deals, discounts sent straight in your inbox daily
+                            </p>
+                            <form class="subscribe-form" style="display: flex; gap: 5px;">
+                                <input type="email" placeholder="Email Address" required 
+                                       style="flex: 1; padding: 12px; background: #2a2a2a; border: 1px solid #3a3a3a; 
+                                              color: #acacac; border-radius: 4px; font-size: 14px;">
+                                <button type="submit" 
+                                        style="background: #2a2a2a; border: 1px solid #3a3a3a; color: #fff; 
+                                               padding: 12px 15px; border-radius: 4px; cursor: pointer;">
+                                    <i class="fa fa-arrow-right"></i>
+                                </button>
+                            </form>
+                            
+                            <!-- Secure Payments -->
+                            <div style="margin-top: 30px;">
+                                <h6 style="color: #acacac; font-size: 14px; font-weight: normal; margin-bottom: 15px;">Secure Payments</h6>
+                                <div class="payment-logos" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                                    <!-- Visa -->
+                                    <img src="https://cdn.simpleicons.org/visa/1a1f71" 
+                                         alt="Visa" 
+                                         style="height: 24px; width: auto; background: #1a1f71; padding: 4px 8px; border-radius: 4px;">
+                                    
+                                    <!-- American Express -->
+                                    <img src="https://cdn.simpleicons.org/americanexpress/006fcf" 
+                                         alt="American Express" 
+                                         style="height: 24px; width: auto; background: #006fcf; padding: 4px 8px; border-radius: 4px;">
+                                    
+                                    <!-- Discover -->
+                                    <img src="https://cdn.simpleicons.org/discover/ff6000" 
+                                         alt="Discover" 
+                                         style="height: 24px; width: auto; background: #ff6000; padding: 4px 8px; border-radius: 4px;">
+                                    
+                                    <!-- Mastercard -->
+                                    <img src="https://cdn.simpleicons.org/mastercard/eb001b" 
+                                         alt="Mastercard" 
+                                         style="height: 24px; width: auto; background: #eb001b; padding: 4px 8px; border-radius: 4px;">
                                 </div>
                             </div>
                         </div>
@@ -283,53 +346,42 @@
             </div>
             <!-- End Footer Info -->
 
-        <style>
-            .counter-box {
-                display: block;
-             
-                text-align: center
-                
-            }
-            .ls{ 
-                padding-left: 30px;
-                color: #34b79d !important;
-            }
-            
-            .counter-box p {
-                margin: 5px 0 0;
-                padding: 0;
-                color: #acacac;
-                font-size: 18px;
-                font-weight: 500
-            }
-            
-            .counter-box i {
-                font-size: 60px;
-                margin: 0 0 15px;
-               
-            }
-            
-            .counter { 
-                display: block;
-                font-size: 32px;
-                font-weight: 700;
-                padding-left: 40px;
-                color: #acacac;
-                line-height: 28px
-            }
-            
-         
-        </style>
-
             <!-- Footer Copyright -->
-            <div class="container">
-                <div class="copyrights">
-                    <p class="copyright m-4 ">&copy; Created by <a href="https://mdakbari.github.io/" target="_blank">Manthan Akbari</a></p>
-                    
+            <div class="container" style="border-top: 1px solid #3a3a3a; padding-top: 20px; padding-bottom: 20px;">
+                <div class="copyrights" style="text-align: center;">
+                    <p style="color: #acacac; margin: 0;">
+                        &copy; 2025 Baabuu Clothing. Design & Develop By ❤️ <a href="https://mdakbari.github.io/" target="_blank" style="color: #acacac; text-decoration: none;">Sumindra Shrestha</a>.
+                    </p>
                 </div>
             </div>
             <!-- End Footer Copyright -->
         </footer>
+        
+        <!-- Scroll to Top Button -->
+        <button id="scrollToTop" style="position: fixed; bottom: 20px; right: 20px; width: 40px; height: 40px; 
+                background: #2a2a2a; border: 1px solid #3a3a3a; color: #fff; border-radius: 4px; 
+                cursor: pointer; display: none; z-index: 1000; align-items: center; justify-content: center;">
+            <i class="fa fa-arrow-up"></i>
+        </button>
+        
+        <script>
+            // Scroll to top functionality
+            window.addEventListener('scroll', function() {
+                var scrollBtn = document.getElementById('scrollToTop');
+                if (window.pageYOffset > 300) {
+                    scrollBtn.style.display = 'flex';
+                } else {
+                    scrollBtn.style.display = 'none';
+                }
+            });
+            
+            document.getElementById('scrollToTop').addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+        </script>
                <!-- End Footer Section -------------->
 
     </div>
