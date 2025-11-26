@@ -175,7 +175,7 @@
                                         {% endif %}
                                         <br>
                                     </div>
-                                    <img src="{% if item.subproduct_id.image|slice:':4' == 'http' %}{{ item.subproduct_id.image }}{% elif item.subproduct_id.image|slice:':1' == '/' %}{{ item.subproduct_id.image }}{% elif item.subproduct_id.image|slice:':7' == 'images/' %}https://images.prathmeshsoni.works/{{ item.subproduct_id.image }}{% else %}/media/{{ item.subproduct_id.image }}{% endif %}" alt="{{ item.subproduct_id.product.name }}" class="product-image">
+                                    <img src="{{ item.subproduct_id.image_url }}?v={{ item.subproduct_id.updated_at|date:'U' }}" alt="{{ item.subproduct_id.product.name }}" class="product-image">
                                 </div>
                             </li>
                         {% endfor %}

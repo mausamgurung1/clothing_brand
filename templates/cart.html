@@ -66,7 +66,7 @@
                                                 </td>
                                                 <td class="product-thumbnail">
                                                     <a href="{% url "show_product" item.subproduct.id %}">
-                                                        <img src="{% if item.subproduct.image|slice:':4' == 'http' %}{{ item.subproduct.image }}?v={{ item.subproduct.updated_at|date:'U' }}{% elif item.subproduct.image|slice:':1' == '/' %}{{ item.subproduct.image }}{% elif item.subproduct.image|slice:':7' == 'images/' %}https://images.prathmeshsoni.works/{{ item.subproduct.image }}?v={{ item.subproduct.updated_at|date:'U' }}{% else %}/media/{{ item.subproduct.image }}?v={{ item.subproduct.updated_at|date:'U' }}{% endif %}" alt="" /></a>
+                                                        <img src="{{ item.subproduct.image_url }}?v={{ item.subproduct.updated_at|date:'U' }}" alt="{{ item.subproduct.product.name }}" /></a>
                                                 </td>
                                                 <td class="product-name">
                                                     <a href="{% url "show_product" item.subproduct.id %}">{{ item.subproduct.product.name }} - {{ item.size }} | {{ item.color }}</a>

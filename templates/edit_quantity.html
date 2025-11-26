@@ -12,7 +12,7 @@
         </div>
 
         <!-- New Product Add Start -->
-        
+
         <div class="container-fluid">
             <div class="row">
                 <div class="col-sm-12">
@@ -20,13 +20,15 @@
                         <div class="card-body">
                             <div>
                                 <div class="table-responsive table-desi table-product">
-                                    <form class="theme-form theme-form-2 mega-form" method="post" action="{% url 'edit_quantity'  product.id%}" enctype="multipart/form-data">
+                                    <form class="theme-form theme-form-2 mega-form" method="post"
+                                        action="{% url 'edit_quantity'  product.id%}" enctype="multipart/form-data">
                                         <div class="row">
                                             {% csrf_token %}
-                                            
+
                                             <!-- Product Information Display -->
                                             <div class="mb-4 row align-items-start">
-                                                <label class="col-sm-2 col-form-label form-label-title">Product Image</label>
+                                                <label class="col-sm-2 col-form-label form-label-title">Product
+                                                    Image</label>
                                                 <div class="col-sm-10">
                                                     <div class="row">
                                                         <!-- Current/Old Image Display -->
@@ -34,85 +36,97 @@
                                                             <label class="form-label fw-bold mb-2">
                                                                 <i class="fa fa-image me-2"></i>Current Image:
                                                             </label>
-                                                            <div class="border rounded p-3 text-center" style="background-color: #f8f9fa; min-height: 300px; display: flex; flex-direction: column; justify-content: center;">
+                                                            <div class="border rounded p-3 text-center"
+                                                                style="background-color: #f8f9fa; min-height: 205px; display: flex; flex-direction: column; justify-content: center;">
                                                                 {% if product.image %}
-                                                                <img src="{% if product.image|slice:':4' == 'http' %}{{ product.image }}?v={{ product.updated_at|date:'U' }}{% elif product.image|slice:':1' == '/' %}{{ product.image }}{% elif product.image|slice:':7' == 'images/' %}https://images.prathmeshsoni.works/{{ product.image }}?v={{ product.updated_at|date:'U' }}{% else %}/media/{{ product.image }}?v={{ product.updated_at|date:'U' }}{% endif %}" 
-                                                                    alt="Product Image" id="currentProductImage" 
-                                                                    class="img-thumbnail mx-auto" 
-                                                                    style="max-width: 100%; max-height: 250px; width: auto; height: auto; border: 2px solid #dee2e6; padding: 5px; border-radius: 5px; object-fit: contain;" 
+                                                                <img src="{{ product.image_url }}?v={{ product.updated_at|date:'U' }}"
+                                                                    alt="Product Image" id="currentProductImage"
+                                                                    class="img-thumbnail mx-auto"
+                                                                    style="max-width: 100%; max-height: 250px; width: auto; height: auto; border: 2px solid #dee2e6; padding: 5px; border-radius: 5px; object-fit: contain;"
                                                                     onerror="this.src='/static/img/placeholder.jpg'; this.onerror=null;">
-                                                                <div class="mt-3">
-                                                                    <button type="button" class="btn btn-sm btn-danger" id="removeCurrentImage" onclick="removeImage()">
-                                                                        <i class="fa fa-trash me-1"></i> Remove Image
-                                                                    </button>
-                                                                </div>
+
                                                                 {% else %}
-                                                                <div class="text-muted" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
-                                                                    <i class="fa fa-image" style="font-size: 64px; opacity: 0.3; margin-bottom: 15px;"></i>
-                                                                    <span style="font-size: 14px;">No image available</span>
+                                                                <div class="text-muted"
+                                                                    style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+                                                                    <i class="fa fa-image"
+                                                                        style="font-size: 64px; opacity: 0.3; margin-bottom: 15px;"></i>
+                                                                    <span style="font-size: 14px;">No image
+                                                                        available</span>
                                                                 </div>
                                                                 {% endif %}
                                                             </div>
-                                                            <input type="hidden" name="remove_image" id="removeImageFlag" value="0">
-                                                        </div>
-                                                        
-                                                        <!-- Upload New Image Section -->
-                                                        <div class="col-md-6 mb-3">
-                                                            <label class="form-label fw-bold mb-2">
-                                                                <i class="fa fa-upload me-2"></i>Upload New Image:
-                                                            </label>
-                                                            <div class="border rounded p-4 text-center" style="background-color: #ffffff; min-height: 300px; display: flex; flex-direction: column; justify-content: center; border: 2px dashed #0d6efd !important;">
-                                                                <div class="mb-3">
-                                                                    <i class="fa fa-cloud-upload" style="font-size: 48px; color: #0d6efd; margin-bottom: 15px;"></i>
-                                                                    <p class="text-muted mb-3">Click below to select and upload a new image</p>
-                                                                    <label for="productImageUpload" class="btn btn-primary btn-lg">
-                                                                        <i class="fa fa-folder-open me-2"></i>Choose File
-                                                                    </label>
-                                                                    <input type="file" name="images" id="productImageUpload" accept="image/*" style="display: none;" onchange="updateImagePreview(this)">
-                                                                    <div id="fileName" class="mt-2 text-muted small"></div>
-                                                                </div>
-                                                                <small class="text-muted d-block mt-3">
-                                                                    <strong>Accepted formats:</strong> JPEG, PNG, GIF, WebP<br>
-                                                                    <strong>Maximum size:</strong> 10MB
-                                                                </small>
-                                                            </div>
+
+                                                            {% comment %} <input type="hidden" name="remove_image"
+                                                                id="removeImageFlag" value="0"> {% endcomment %}
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                            
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label fw-bold mb-2">
+                                                    <i class="fa fa-upload me-2"></i>Upload New Image:
+                                                </label>
+                                                <input type="file" name="images" id="productImageInput"
+                                                    class="form-control" accept="image/*"
+                                                    onchange="previewNewImage(event)">
+                                                <div id="fileName" class="mt-2 text-muted small"></div>
+
+                                                <!-- New Image Preview Section -->
+                                                <div id="newImagePreviewSection" class="mt-3" style="display: none;">
+                                                    <label class="form-label fw-bold mb-2">
+                                                        <i class="fa fa-eye me-2"></i>New Image Preview:
+                                                    </label>
+                                                    <div class="border rounded p-3 text-center"
+                                                        style="background-color: #d4edda; min-height: 205px; display: flex; flex-direction: column; justify-content: center; border-color: #28a745 !important;">
+                                                        <img id="newImagePreview" alt="New Image Preview"
+                                                            class="img-thumbnail mx-auto"
+                                                            style="max-width: 100%; max-height: 250px; width: auto; height: auto; border: 2px solid #28a745; padding: 5px; border-radius: 5px; object-fit: contain;">
+                                                        <div class="mt-2">
+                                                            <span class="badge bg-success"><i
+                                                                    class="fa fa-check-circle me-1"></i>This image will
+                                                                replace the current image</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                             <div class="mb-4 row align-items-center">
-                                                <label
-                                                    class="col-sm-2 col-form-label form-label-title">Product</label>
+                                                <label class="col-sm-2 col-form-label form-label-title">Product</label>
                                                 <div class="col-sm-10">
-                                                    <select class="js-example-basic-single w-100" name="product" disabled>
-                                                        <option value="{{product.product.id}}">{{product.product.name}} (Rs{{product.product.price}})</option>
-                                                  
+                                                    <select class="js-example-basic-single w-100" name="product"
+                                                        disabled>
+                                                        <option value="{{product.product.id}}">{{product.product.name}}
+                                                            (Rs{{product.product.price}})</option>
+
                                                     </select>
                                                     <input type="hidden" name="product" value="{{product.product.id}}">
-                                                    <small class="text-muted">Product: {{product.product.name}} | Category: {{product.product.category}} | Price: Rs{{product.product.price}}</small>
+                                                    <small class="text-muted">Product: {{product.product.name}} |
+                                                        Category: {{product.product.category}} | Price:
+                                                        Rs{{product.product.price}}</small>
                                                 </div>
                                             </div>
 
                                             <div class="mb-4 row align-items-center">
                                                 <label class="form-label-title col-sm-2 mb-0">Size
-                                                    </label>
+                                                </label>
                                                 <div class="col-sm-10">
-                                                    <select class="js-example-basic-multiple w-100" name="sizes" id="sizes" onchange="getcolor_bysize()">
+                                                    <select class="js-example-basic-multiple w-100" name="sizes"
+                                                        id="sizes" onchange="getcolor_bysize()">
                                                         <option value="">Selcet Size</option>
-                                                        
+
                                                         {% for size in sizes %}
                                                         <option value="{{ size.pk }}">{{ size.name }}</option>
-                                                    {% endfor %}
+                                                        {% endfor %}
                                                     </select>
                                                 </div>
                                             </div>
 
                                             <div class="mb-4 row align-items-center">
                                                 <label class="form-label-title col-sm-2 mb-0">Color
-                                                    </label>
+                                                </label>
                                                 <div class="col-sm-10">
-                                                    <select class="js-example-basic-multiple w-100" name="colors" id="colors" onchange="">
+                                                    <select class="js-example-basic-multiple w-100" name="colors"
+                                                        id="colors" onchange="">
                                                         <option value="">Selcet Color
                                                         </option>
 
@@ -121,23 +135,24 @@
                                             </div>
                                             <div class="mb-4 row align-items-center">
                                                 <label class="form-label-title col-sm-2 mb-0">Stock
-                                                    </label>
+                                                </label>
                                                 <div class="col-sm-10">
-                                                    <input class="form-control" type="text" name="stock" id="stock" value=""
-                                                        placeholder="Product Name">
+                                                    <input class="form-control" type="text" name="stock" id="stock"
+                                                        value="" placeholder="Product Name">
                                                 </div>
                                             </div>
 
                                             <div class="mb-4 row align-items-center">
-                                            
+
                                                 <div class="col-sm-10">
-                                                    <button type="submit" name="size_form" class="btn btn-primary">Submit</button>
+                                                    <button type="submit" name="size_form"
+                                                        class="btn btn-primary">Submit</button>
                                                 </div>
                                             </div>
-                                        
-                
 
-                                           
+
+
+
                                         </div>
                                     </form>
                                 </div>
@@ -148,8 +163,7 @@
                             <nav class="ms-auto me-auto " aria-label="...">
                                 <ul class="pagination pagination-primary">
                                     <li class="page-item disabled">
-                                        <a class="page-link" href="javascript:void(0)"
-                                            tabindex="-1">Previous</a>
+                                        <a class="page-link" href="javascript:void(0)" tabindex="-1">Previous</a>
                                     </li>
 
                                     <li class="page-item active">
@@ -191,18 +205,19 @@
         <!-- footer En -->
     </div>
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 
-<script>
-    $(document).ready(function () {
-       
-        $('#colors').change(function () {
-            getstock();
+    <script>
+        $(document).ready(function () {
+
+            $('#colors').change(function () {
+                getstock();
+            });
         });
-    });
 
-    function getcolor_bysize(){
-        var product_id = {{product.product.id}};
+        function getcolor_bysize() {
+            var product_id = {{ product.product.id }
+        };
         var size_id = $('#sizes').val();
 
         $.ajax({
@@ -216,19 +231,20 @@
                 $('#colors').empty().append('<option value="">Select Color</option>');
                 $.each(response.colors, function (key, value) {
 
-                    $('#colors').append('<option value="'+value.id+'">'+value.name+'</option>');
+                    $('#colors').append('<option value="' + value.id + '">' + value.name + '</option>');
                 });
-               
-                },
+
+            },
         })
     }
 
-    function getstock() {
-        var product_id = {{product.product.id}};
+        function getstock() {
+            var product_id = {{ product.product.id }
+        };
         var size_id = $('#sizes').val();
         var color_id = $('#colors').val();
 
-        
+
         // Send an AJAX request to fetch the stock quantity based on the selected product and size
         $.ajax({
             url: "getstock/",
@@ -248,125 +264,118 @@
             }
         });
     }
-    
-    // Function to update image preview when file is selected
-    function updateImagePreview(input) {
-        const file = input.files[0];
-        const fileName = document.getElementById('fileName');
-        const currentImage = document.getElementById('currentProductImage');
-        const removeFlag = document.getElementById('removeImageFlag');
-        
-        if (file) {
-            // Clear remove flag if new image is selected (new image will override removal)
-            if (removeFlag && removeFlag.value == '1') {
-                removeFlag.value = '0';
-            }
-            
-            // Validate file size (10MB)
-            if (file.size > 10 * 1024 * 1024) {
-                alert('Image file is too large. Maximum size is 10MB');
-                input.value = '';
-                if (fileName) fileName.textContent = '';
-                return;
-            }
-            
-ae            // Validate file type - be more flexible
-            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-            const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-            const fileExtension = '.' + file.name.toLowerCase().split('.').pop();
-            
-            // Check both MIME type and file extension
-            if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
-                alert('Invalid image format. Please upload JPEG, PNG, GIF, or WebP\n\nDetected type: ' + file.type + '\nFile: ' + file.name);
-                input.value = '';
-                if (fileName) fileName.textContent = '';
-                return;
-            }
-            
-            // Log for debugging
-            console.log('Image validation passed - Type: ' + file.type + ', Extension: ' + fileExtension + ', Size: ' + (file.size / 1024 / 1024).toFixed(2) + ' MB');
-            
-            // Show file name
-            if (fileName) {
-                fileName.innerHTML = '<i class="fa fa-check-circle text-success me-1"></i><strong>' + file.name + '</strong> (Selected)';
-            }
-            
-            // Immediately update the current image preview
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                if (currentImage) {
-                    // Create a temporary preview by updating the current image display
-                    currentImage.src = event.target.result;
-                    currentImage.style.border = '2px solid #28a745';
-                    
-                    // Add a visual indicator that it's a new image
-                    const imageContainer = currentImage.closest('.border');
-                    if (imageContainer) {
-                        imageContainer.style.borderColor = '#28a745';
-                        imageContainer.style.backgroundColor = '#d4edda';
-                    }
-                }
-            };
-            reader.readAsDataURL(file);
-        } else {
-            if (fileName) fileName.textContent = '';
-        }
-    }
-    
-    // Remove image functionality
-    function removeImage() {
-        if (confirm('Are you sure you want to remove the current image? This action cannot be undone.')) {
-            // Set hidden flag to indicate image should be removed
-            const removeFlag = document.getElementById('removeImageFlag');
-            if (removeFlag) {
-                removeFlag.value = '1';
-            }
-            
-            // Hide current image and show message
-            const currentImageContainer = document.getElementById('currentProductImage');
-            const imageWrapper = currentImageContainer ? currentImageContainer.closest('.border') : null;
-            if (imageWrapper) {
-                imageWrapper.innerHTML = '<div class="text-muted p-4 text-center" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;"><i class="fa fa-image" style="font-size: 64px; opacity: 0.3; margin-bottom: 15px;"></i><span>Image will be removed after saving</span></div>';
-            }
-            
-            // Clear file input if any file was selected
-            const fileInput = document.getElementById('productImageUpload');
-            const fileName = document.getElementById('fileName');
-            if (fileInput) {
-                fileInput.value = '';
-            }
-            if (fileName) {
-                fileName.textContent = '';
-            }
-            
-            console.log('Image removal marked for processing');
-        }
-    }
-    
-    // Force reload image after form submission if image was updated
-    const currentImage = document.getElementById('currentProductImage');
-    if (currentImage) {
-        // Check if page was loaded after a POST (image was just updated)
-        if (document.querySelector('.alert-success')) {
-            // Force reload the image to show updated version
-            const originalSrc = currentImage.src.split('?')[0];
-            const timestamp = new Date().getTime();
-            currentImage.src = originalSrc + '?v=' + timestamp;
-            console.log('Image reloaded with new timestamp:', currentImage.src);
-        }
-        
-        // Also reload image on page load to ensure latest version
-        window.addEventListener('load', function() {
-            const originalSrc = currentImage.src.split('?')[0];
-            const timestamp = new Date().getTime();
-            // Only reload if not already has timestamp
-            if (!currentImage.src.includes('?v=')) {
-                currentImage.src = originalSrc + '?v=' + timestamp;
-            }
-        });
-    }
 
-</script>
+        // Function to preview new image when file is selected
+        function previewNewImage(event) {
+            const file = event.target.files[0];
+            const fileName = document.getElementById('fileName');
+            const newImagePreview = document.getElementById('newImagePreview');
+            const newImagePreviewSection = document.getElementById('newImagePreviewSection');
+
+            if (file) {
+                // Validate file size (10MB)
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('Image file is too large. Maximum size is 10MB');
+                    event.target.value = '';
+                    if (fileName) fileName.textContent = '';
+                    if (newImagePreviewSection) newImagePreviewSection.style.display = 'none';
+                    return;
+                }
+
+                // Validate file type - be more flexible
+                const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+                const fileExtension = '.' + file.name.toLowerCase().split('.').pop();
+
+                // Check both MIME type and file extension
+                if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+                    alert('Invalid image format. Please upload JPEG, PNG, GIF, or WebP\n\nDetected type: ' + file.type + '\nFile: ' + file.name);
+                    event.target.value = '';
+                    if (fileName) fileName.textContent = '';
+                    if (newImagePreviewSection) newImagePreviewSection.style.display = 'none';
+                    return;
+                }
+
+                // Log for debugging
+                console.log('Image validation passed - Type: ' + file.type + ', Extension: ' + fileExtension + ', Size: ' + (file.size / 1024 / 1024).toFixed(2) + ' MB');
+
+                // Show file name
+                if (fileName) {
+                    fileName.innerHTML = '<i class="fa fa-check-circle text-success me-1"></i><strong>' + file.name + '</strong> (' + (file.size / 1024).toFixed(2) + ' KB)';
+                }
+
+                // Show the new image preview section and load the image
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    if (newImagePreview) {
+                        newImagePreview.src = e.target.result;
+                        if (newImagePreviewSection) {
+                            newImagePreviewSection.style.display = 'block';
+                        }
+                    }
+                };
+                reader.readAsDataURL(file);
+            } else {
+                // Clear preview if no file selected
+                if (fileName) fileName.textContent = '';
+                if (newImagePreviewSection) newImagePreviewSection.style.display = 'none';
+            }
+        }
+
+        // Remove image functionality
+        function removeImage() {
+            if (confirm('Are you sure you want to remove the current image? This action cannot be undone.')) {
+                // Set hidden flag to indicate image should be removed
+                const removeFlag = document.getElementById('removeImageFlag');
+                if (removeFlag) {
+                    removeFlag.value = '1';
+                }
+
+                // Hide current image and show message
+                const currentImageContainer = document.getElementById('currentProductImage');
+                const imageWrapper = currentImageContainer ? currentImageContainer.closest('.border') : null;
+                if (imageWrapper) {
+                    imageWrapper.innerHTML = '<div class="text-muted p-4 text-center" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;"><i class="fa fa-image" style="font-size: 64px; opacity: 0.3; margin-bottom: 15px;"></i><span>Image will be removed after saving</span></div>';
+                }
+
+                // Clear file input if any file was selected
+                const fileInput = document.getElementById('productImageUpload');
+                const fileName = document.getElementById('fileName');
+                if (fileInput) {
+                    fileInput.value = '';
+                }
+                if (fileName) {
+                    fileName.textContent = '';
+                }
+
+                console.log('Image removal marked for processing');
+            }
+        }
+
+        // Force reload image after form submission if image was updated
+        const currentImage = document.getElementById('currentProductImage');
+        if (currentImage) {
+            // Check if page was loaded after a POST (image was just updated)
+            if (document.querySelector('.alert-success')) {
+                // Force reload the image to show updated version
+                const originalSrc = currentImage.src.split('?')[0];
+                const timestamp = new Date().getTime();
+                currentImage.src = originalSrc + '?v=' + timestamp;
+                console.log('Image reloaded with new timestamp:', currentImage.src);
+            }
+
+            // Also reload image on page load to ensure latest version
+            window.addEventListener('load', function () {
+                const originalSrc = currentImage.src.split('?')[0];
+                const timestamp = new Date().getTime();
+                // Only reload if not already has timestamp
+                if (!currentImage.src.includes('?v=')) {
+                    currentImage.src = originalSrc + '?v=' + timestamp;
+                }
+            });
+        }
+
+    </script>
 
 
 </div>

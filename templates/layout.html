@@ -316,28 +316,26 @@
                             </form>
                             
                             <!-- Secure Payments -->
-                            <div style="margin-top: 30px;">
-                                <h6 style="color: #acacac; font-size: 14px; font-weight: normal; margin-bottom: 15px;">Secure Payments</h6>
-                                <div class="payment-logos" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
-                                    <!-- Visa -->
-                                    <img src="https://cdn.simpleicons.org/visa/1a1f71" 
-                                         alt="Visa" 
-                                         style="height: 24px; width: auto; background: #1a1f71; padding: 4px 8px; border-radius: 4px;">
-                                    
-                                    <!-- American Express -->
-                                    <img src="https://cdn.simpleicons.org/americanexpress/006fcf" 
-                                         alt="American Express" 
-                                         style="height: 24px; width: auto; background: #006fcf; padding: 4px 8px; border-radius: 4px;">
-                                    
-                                    <!-- Discover -->
-                                    <img src="https://cdn.simpleicons.org/discover/ff6000" 
-                                         alt="Discover" 
-                                         style="height: 24px; width: auto; background: #ff6000; padding: 4px 8px; border-radius: 4px;">
-                                    
+                          <div style="margin-top: 30px;">
+                                <h6 style="color: #acacac; font-size: 14px; font-weight: normal; margin-bottom: 15px;">
+                                    Secure Payments</h6>
+                                <div class="payment-logos"
+                                    style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
                                     <!-- Mastercard -->
-                                    <img src="https://cdn.simpleicons.org/mastercard/eb001b" 
-                                         alt="Mastercard" 
-                                         style="height: 24px; width: auto; background: #eb001b; padding: 4px 8px; border-radius: 4px;">
+                                    <img src="{% static 'img/payment/master.png' %}" alt="Mastercard"
+                                        style="height: 24px; width: auto; background: #1a1f71; padding: 4px 8px; border-radius: 4px;">
+
+                                    <!-- PayPal -->
+                                    <img src="{% static 'img/payment/paypal.png' %}" alt="PayPal"
+                                        style="height: 24px; width: auto; background: #006fcf; padding: 4px 8px; border-radius: 4px;">
+
+                                    <!-- Visa -->
+                                    <img src="{% static 'img/payment/visa.png' %}" alt="Visa"
+                                        style="height: 24px; width: auto; background: #ff6000; padding: 4px 8px; border-radius: 4px;">
+
+                                    <!-- Stripe -->
+                                    <img src="{% static 'img/payment/strip.png' %}" alt="Stripe"
+                                        style="height: 24px; width: auto; background: #eb001b; padding: 4px 8px; border-radius: 4px;">
                                 </div>
                             </div>
                         </div>

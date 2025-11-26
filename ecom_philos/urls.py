@@ -29,7 +29,7 @@ from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('admin/login/', auth_views.LoginView.as_view(template_name='admin_login.html'), name='admin_login'),
-    path('admin/', admin.site.urls),
+    path('admin/', redirect_to_admin, name='admin_redirect'),
 
     path('get_product_sizencolor/' ,get_product_sizencolor , name='get_product_sizencolor'),
     path('get_available_colors/' ,get_available_colors , name='get_available_colors'),

@@ -56,7 +56,7 @@
                                                     <tr class="table-order">
                                                         <td>
                                                             <a href="javascript:void(0)">
-                                                                <img src="{% if item.subproduct_id.image|slice:':4' == 'http' %}{{ item.subproduct_id.image }}?v={{ item.subproduct_id.updated_at|date:'U' }}{% elif item.subproduct_id.image|slice:':1' == '/' %}{{ item.subproduct_id.image }}{% elif item.subproduct_id.image|slice:':7' == 'images/' %}https://images.prathmeshsoni.works/{{ item.subproduct_id.image }}?v={{ item.subproduct_id.updated_at|date:'U' }}{% else %}/media/{{ item.subproduct_id.image }}?v={{ item.subproduct_id.updated_at|date:'U' }}{% endif %}"
+                                                                <img src="{{ item.subproduct_id.image_url }}?v={{ item.subproduct_id.updated_at|date:'U' }}"
                                                                     class="img-fluid blur-up lazyload" alt="">
                                                             </a>
                                                         </td>
