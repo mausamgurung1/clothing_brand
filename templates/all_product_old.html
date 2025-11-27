@@ -41,12 +41,8 @@
 
                                                 <td>{{ forloop.counter }}</td>
                                                 <td>
-                                                    {% if product.image %}
-                                                    <img src="{% if product.image|slice:':4' == 'http' %}{{ product.image }}{% elif product.image|slice:':1' == '/' %}{{ product.image }}{% elif product.image|slice:':7' == 'images/' %}https://images.prathmeshsoni.works/{{ product.image }}{% else %}/media/{{ product.image }}{% endif %}" 
-                                                        class="img-fluid" style="max-width: 80px; max-height: 80px; object-fit: cover;" alt="img">
-                                                    {% else %}
-                                                    <span class="text-muted">No Image</span>
-                                                    {% endif %}
+                                                    <img src="{{ product.image_url }}?v={{ product.updated_at|date:'U' }}" 
+                                                        class="img-fluid" style="max-width: 80px; max-height: 80px; object-fit: cover;" alt="{{ product.product.name }}">
                                                 </td>
                                                 <td>
                                                     <strong>{{ product.product.name }}</strong>

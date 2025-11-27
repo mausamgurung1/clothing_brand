@@ -8,7 +8,7 @@
 <div class="page-body-wrapper">
     <div class="page-body">
         <div class="title-header">
-            <h5>Message Detail</h5>
+            <h5>Chat Conversation</h5>
             <a href="{% url 'message_list' %}" class="btn btn-primary btn-sm">
                 <i class="fa fa-arrow-left"></i> Back to Messages
             </a>
@@ -16,84 +16,88 @@
 
         <div class="container-fluid">
             <div class="row">
-                <div class="col-md-8 mx-auto">
-                    <div class="card">
-                        <div class="card-header bg-primary text-white">
-                            <h6 class="mb-0">
-                                <i class="fa fa-user me-2"></i>
-                                {{ message_obj.user.user_name|default:message_obj.sender_name|default:"Guest" }}
-                                {% if message_obj.user.user_email or message_obj.sender_email %}
-                                <small class="ms-2">({{ message_obj.user.user_email|default:message_obj.sender_email }})</small>
-                                {% endif %}
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <!-- User Message -->
-                            <div class="message-container mb-4">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <strong>User Message:</strong>
-                                    <small class="text-muted">{{ message_obj.created_at|date:"d M Y, H:i" }}</small>
-                                </div>
-                                <div class="message-box user-message p-3 rounded">
-                                    {{ message_obj.message|linebreaks }}
-                                </div>
-                                <div class="mt-2">
-                                    {% if message_obj.is_seen %}
-                                    <span class="badge bg-success"><i class="fa fa-check-double"></i> Seen</span>
-                                    {% else %}
-                                    <span class="badge bg-warning"><i class="fa fa-clock"></i> Not Seen</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-
-                            <!-- Admin Reply Section -->
-                            {% if message_obj.reply %}
-                            <div class="message-container mb-4">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <strong>Your Reply:</strong>
-                                    <small class="text-muted">{{ message_obj.updated_at|date:"d M Y, H:i" }}</small>
-                                </div>
-                                <div class="message-box admin-message p-3 rounded">
-                                    {{ message_obj.reply|linebreaks }}
-                                </div>
-                                <div class="mt-2">
-                                    {% if message_obj.reply_seen %}
-                                    <span class="badge bg-info"><i class="fa fa-check-double"></i> User Seen</span>
-                                    {% else %}
-                                    <span class="badge bg-warning"><i class="fa fa-clock"></i> User Not Seen</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            {% endif %}
-
-                            <!-- Reply Form -->
-                            <div class="reply-section">
-                                <h6 class="mb-3">
-                                    {% if message_obj.reply %}
-                                    <i class="fa fa-edit"></i> Update Reply
-                                    {% else %}
-                                    <i class="fa fa-reply"></i> Send Reply
-                                    {% endif %}
+                <div class="col-md-10 mx-auto">
+                    <!-- Chat Header -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">
+                                    <i class="fa fa-user me-2"></i>
+                                    {{ user_name|default:"Guest" }}
                                 </h6>
-                                <form method="POST" id="replyForm">
+                                {% if user_email %}
+                                <small class="text-white-50">{{ user_email }}</small>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <span class="badge bg-light text-dark">
+                                    {{ conversation_messages|length }} message{{ conversation_messages|length|pluralize }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- WhatsApp Style Chat Container -->
+                    <div class="card">
+                        <div class="card-body p-0">
+                            <!-- Chat Messages Area -->
+                            <div id="chatMessages" class="chat-container">
+                                {% for msg in conversation_messages %}
+                                    <!-- User Message (Left side) -->
+                                    <div class="message-wrapper user-message-wrapper">
+                                        <div class="message-bubble user-bubble">
+                                            <div class="message-text">{{ msg.message|linebreaks }}</div>
+                                            <div class="message-time">
+                                                {{ msg.created_at|date:"H:i" }}
+                                                {% if msg.is_seen %}
+                                                <i class="fa fa-check-double text-info ms-1" title="Seen"></i>
+                                                {% else %}
+                                                <i class="fa fa-check text-muted ms-1" title="Delivered"></i>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Admin Reply (Right side) -->
+                                    {% if msg.reply %}
+                                    <div class="message-wrapper admin-message-wrapper">
+                                        <div class="message-bubble admin-bubble">
+                                            <div class="message-text">{{ msg.reply|linebreaks }}</div>
+                                            <div class="message-time">
+                                                {{ msg.updated_at|date:"H:i" }}
+                                                {% if msg.reply_seen %}
+                                                <i class="fa fa-check-double text-info ms-1" title="User Seen"></i>
+                                                {% else %}
+                                                <i class="fa fa-check text-muted ms-1" title="Delivered"></i>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% empty %}
+                                <div class="text-center p-4 text-muted">
+                                    <i class="fa fa-comments fa-3x mb-3"></i>
+                                    <p>No messages in this conversation</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Reply Form (Fixed at bottom) -->
+                            <div class="chat-input-container">
+                                <form method="POST" id="replyForm" class="chat-form">
                                     {% csrf_token %}
-                                    <div class="mb-3">
+                                    <input type="hidden" name="reply_to_message_id" value="{{ message_obj.id }}" id="replyToMessageId">
+                                    <div class="input-group">
                                         <textarea 
                                             name="reply" 
                                             id="replyText" 
-                                            class="form-control" 
-                                            rows="5" 
-                                            placeholder="Type your reply here..."
+                                            class="form-control chat-input" 
+                                            rows="2" 
+                                            placeholder="Type a message..."
                                             required
-                                        >{% if message_obj.reply %}{{ message_obj.reply }}{% endif %}</textarea>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fa fa-paper-plane me-1"></i>
-                                            {% if message_obj.reply %}Update Reply{% else %}Send Reply{% endif %}
-                                        </button>
-                                        <button type="button" class="btn btn-secondary" onclick="sendReplyAjax()">
-                                            <i class="fa fa-flash me-1"></i> Quick Reply (AJAX)
+                                        ></textarea>
+                                        <button type="submit" class="btn btn-primary chat-send-btn" id="sendBtn">
+                                            <i class="fa fa-paper-plane"></i> Send
                                         </button>
                                     </div>
                                 </form>
@@ -107,59 +111,322 @@
 </div>
 
 <style>
-.message-box {
+/* WhatsApp Style Chat Container */
+.chat-container {
+    height: 500px;
+    overflow-y: auto;
+    padding: 20px;
+    background: #e5ddd5;
+    background-image: 
+        repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 10px,
+            rgba(0,0,0,.03) 10px,
+            rgba(0,0,0,.03) 20px
+        );
+}
+
+/* Message Wrapper */
+.message-wrapper {
+    margin-bottom: 8px;
+    display: flex;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* User Message (Left side - like WhatsApp) */
+.user-message-wrapper {
+    justify-content: flex-start;
+}
+
+.user-bubble {
+    background: #ffffff;
+    border-radius: 7.5px 7.5px 7.5px 0;
+    max-width: 65%;
+    padding: 8px 12px;
+    box-shadow: 0 1px 0.5px rgba(0,0,0,.13);
+    position: relative;
+}
+
+.user-bubble::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 8px 8px 0;
+    border-color: transparent #ffffff transparent transparent;
+}
+
+/* Admin Message (Right side - like WhatsApp) */
+.admin-message-wrapper {
+    justify-content: flex-end;
+}
+
+.admin-bubble {
+    background: #dcf8c6;
+    border-radius: 7.5px 7.5px 0 7.5px;
+    max-width: 65%;
+    padding: 8px 12px;
+    box-shadow: 0 1px 0.5px rgba(0,0,0,.13);
+    position: relative;
+}
+
+.admin-bubble::after {
+    content: '';
+    position: absolute;
+    right: -8px;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 0 8px 8px;
+    border-color: transparent transparent transparent #dcf8c6;
+}
+
+/* Message Text */
+.message-text {
+    color: #303030;
+    font-size: 14px;
+    line-height: 1.4;
+    word-wrap: break-word;
+    margin-bottom: 4px;
+}
+
+/* Message Time */
+.message-time {
+    font-size: 11px;
+    color: #667781;
+    text-align: right;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.user-bubble .message-time {
+    text-align: left;
+    justify-content: flex-start;
+}
+
+/* Chat Input Container */
+.chat-input-container {
+    border-top: 1px solid #e0e0e0;
+    background: #f0f0f0;
+    padding: 12px;
+}
+
+.chat-form {
+    margin: 0;
+}
+
+.chat-input {
+    border-radius: 21px;
     border: 1px solid #e0e0e0;
-    background: #f8f9fa;
+    resize: none;
+    font-size: 14px;
 }
 
-.user-message {
-    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-    border-left: 4px solid #2196f3;
+.chat-input:focus {
+    border-color: #25d366;
+    box-shadow: 0 0 0 0.2rem rgba(37, 211, 102, 0.25);
 }
 
-.admin-message {
-    background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
-    border-left: 4px solid #9c27b0;
+.chat-send-btn {
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #25d366;
+    border: none;
+    margin-left: 8px;
 }
 
-.reply-section {
-    border-top: 2px solid #e0e0e0;
-    padding-top: 20px;
-    margin-top: 20px;
+.chat-send-btn:hover {
+    background: #20ba5a;
+}
+
+/* Scrollbar Styling */
+.chat-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.chat-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+.chat-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .user-bubble, .admin-bubble {
+        max-width: 85%;
+    }
+    
+    .chat-container {
+        height: 400px;
+    }
 }
 </style>
 
 <script>
-function sendReplyAjax() {
-    const replyText = document.getElementById('replyText').value.trim();
-    if (!replyText) {
-        alert('Please enter a reply');
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append('reply', replyText);
-    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-
-    fetch('{% url "reply_message_ajax" message_obj.id %}', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Reply sent successfully!');
-            // Reload page to show updated reply
-            window.location.reload();
-        } else {
-            alert('Error: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error sending reply. Please try again.');
+document.addEventListener('DOMContentLoaded', function() {
+    const chatContainer = document.getElementById('chatMessages');
+    const replyForm = document.getElementById('replyForm');
+    const replyText = document.getElementById('replyText');
+    const sendBtn = document.getElementById('sendBtn');
+    const replyToMessageId = document.getElementById('replyToMessageId');
+    const messageId = {{ message_obj.id }};
+    
+    // Auto-scroll to bottom on load
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    
+    // Auto-resize textarea
+    replyText.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
     });
-}
+    
+    // Function to add admin reply to chat
+    function addAdminReplyToChat(replyText, time, messageId) {
+        const messageWrapper = document.createElement('div');
+        messageWrapper.className = 'message-wrapper admin-message-wrapper';
+        messageWrapper.innerHTML = `
+            <div class="message-bubble admin-bubble">
+                <div class="message-text">${escapeHtml(replyText)}</div>
+                <div class="message-time">
+                    ${time}
+                    <i class="fa fa-check text-muted ms-1" title="Delivered"></i>
+                </div>
+            </div>
+        `;
+        chatContainer.appendChild(messageWrapper);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+    
+    // Function to escape HTML
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // Handle form submission with AJAX
+    replyForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const text = replyText.value.trim();
+        if (!text) {
+            return false;
+        }
+        
+        // Disable button while sending
+        const originalBtnText = sendBtn.innerHTML;
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Sending...';
+        
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('reply', text);
+        formData.append('reply_to_message_id', replyToMessageId.value);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        
+        // Send AJAX request
+        fetch('{% url "reply_message_ajax" message_obj.id %}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Add reply to chat immediately
+                addAdminReplyToChat(text, data.time, data.message_id);
+                
+                // Clear textarea
+                replyText.value = '';
+                replyText.style.height = 'auto';
+                
+                // Show success message
+                const successMsg = document.createElement('div');
+                successMsg.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+                successMsg.style.zIndex = '9999';
+                successMsg.innerHTML = `
+                    <strong>Success!</strong> ${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.body.appendChild(successMsg);
+                
+                // Remove success message after 3 seconds
+                setTimeout(() => {
+                    successMsg.remove();
+                }, 3000);
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error sending reply. Please try again.');
+        })
+        .finally(() => {
+            // Re-enable button
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = originalBtnText;
+            replyText.focus();
+        });
+    });
+    
+    // Focus on textarea when page loads
+    replyText.focus();
+    
+    // Keyboard shortcut: Enter to send (Shift+Enter for new line)
+    replyText.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (replyText.value.trim()) {
+                replyForm.dispatchEvent(new Event('submit'));
+            }
+        }
+    });
+    
+    // Optional: Auto-refresh conversation every 30 seconds
+    // Uncomment if you want real-time updates
+    /*
+    setInterval(function() {
+        fetch('{% url "get_conversation_ajax" message_obj.id %}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reload page to show new messages
+                // Or implement a smarter update mechanism
+                location.reload();
+            }
+        })
+        .catch(error => console.error('Error refreshing conversation:', error));
+    }, 30000);
+    */
+});
 </script>
 
 {% endblock %}

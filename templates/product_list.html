@@ -137,12 +137,8 @@
                                                                     <tr>
                                                                         <td>{{ forloop.counter }}</td>
                                                                         <td>
-                                                                            {% if variant.image %}
-                                                                            <img src="{% if variant.image|slice:':4' == 'http' %}{{ variant.image }}{% elif variant.image|slice:':7' == 'images/' %}https://images.prathmeshsoni.works/{{ variant.image }}{% else %}/media/{{ variant.image }}{% endif %}" 
-                                                                                style="width: 50px; height: 50px; object-fit: cover;" alt="Variant">
-                                                                            {% else %}
-                                                                            <span class="text-muted">No Image</span>
-                                                                            {% endif %}
+                                                                            <img src="{{ variant.image_url }}?v={{ variant.updated_at|date:'U' }}" 
+                                                                                style="width: 50px; height: 50px; object-fit: cover;" alt="{{ variant.product.name }}">
                                                                         </td>
                                                                         <td>{{ variant.description|truncatewords:10 }}</td>
                                                                         <td>

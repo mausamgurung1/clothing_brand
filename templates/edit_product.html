@@ -59,7 +59,7 @@
                                                             </label>
                                                             <div class="border rounded p-3 text-center" style="background-color: #f8f9fa; min-height: 300px; display: flex; flex-direction: column; justify-content: center;">
                                                                 {% if product.image %}
-                                                                <img src="{% if product.image|slice:':4' == 'http' %}{{ product.image }}?v={{ product.updated_at|date:'U' }}{% elif product.image|slice:':1' == '/' %}{{ product.image }}{% elif product.image|slice:':7' == 'images/' %}https://images.prathmeshsoni.works/{{ product.image }}?v={{ product.updated_at|date:'U' }}{% else %}/media/{{ product.image }}?v={{ product.updated_at|date:'U' }}{% endif %}" 
+                                                                <img src="{{ product.image_url }}?v={{ product.updated_at|date:'U' }}" 
                                                                     alt="Product Image" id="currentProductImage" 
                                                                     class="img-thumbnail mx-auto" 
                                                                     style="max-width: 100%; max-height: 250px; width: auto; height: auto; border: 2px solid #dee2e6; padding: 5px; border-radius: 5px; object-fit: contain;" 
@@ -70,9 +70,8 @@
                                                                     </button>
                                                                 </div>
                                                                 {% else %}
-                                                                <div class="text-muted" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
-                                                                    <i class="fa fa-image" style="font-size: 64px; opacity: 0.3; margin-bottom: 15px;"></i>
-                                                                    <span style="font-size: 14px;">No image available</span>
+                                                                <div class="border rounded p-3 text-center" style="background-color: #f8f9fa; min-height: 300px; display: flex; flex-direction: column; justify-content: center;">
+                                                                    <img src="{{ product.image_url }}" alt="Product Image" class="img-thumbnail mx-auto" style="max-width: 100%; max-height: 250px; width: auto; height: auto; object-fit: contain;">
                                                                 </div>
                                                                 {% endif %}
                                                             </div>

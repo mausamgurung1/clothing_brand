@@ -10,7 +10,8 @@ admin.site.register(placeOrder)
 admin.site.register(sub_placeorder)
 admin.site.register(Contact)
 admin.site.register(Message)
+admin.site.register(Review)
 
-admin.site.site_header = 'StyleX Admin'
+admin.site.site_header = 'Baabuu Clothing Admin'
 
 

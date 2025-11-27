@@ -3952,7 +3952,8 @@ img.tp-caption {
 /* FOOTER     ||---------------------------- */
 /*==========================================================================================================*/
 .footer {
-    background: #252525;
+    background: #1a1a1a;
+    padding: 60px 0 20px;
 }
 
 .copyrights {
@@ -4058,7 +4059,28 @@ img.tp-caption {
     .footer-block ul li a {
         color: #acacac;
         margin: 0 auto;
+        transition: color 0.3s ease;
     }
+    
+    .footer-block ul li a:hover {
+        color: #fff;
+    }
+    
+    .footer-logo {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .subscribe-form input:focus {
+        outline: none;
+        border-color: #e22454;
+    }
+    
+    .subscribe-form button:hover {
+        background: #e22454;
+        border-color: #e22454;
+    }}
 
         .footer-block ul li a:hover {
             color: #34b79d;

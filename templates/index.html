@@ -1,6 +1,7 @@
 {% extends 'layout.html' %}
 {% load static %}
-{% block title %}StyleX - Home{% endblock %}
+{% load dict_tags %}
+{% block title %}Baabuu Clothing - Home{% endblock %}
 {% block body %}
     
 <div class="wraper">
@@ -210,11 +211,10 @@
                 <div class="product-item">
                     <div class="product-item-inner">
                         <div class="product-img-wrap sectionimg">
-                            <a href="{% url 'show_product' product.id %}"  >
-                            <img src="{% if product.image|slice:':4' == 'http' %}{{ product.image }}?v={{ product.updated_at|date:'U' }}{% elif product.image|slice:':1' == '/' %}{{ product.image }}{% elif product.image|slice:':7' == 'images/' %}https://images.prathmeshsoni.works/{{ product.image }}?v={{ product.updated_at|date:'U' }}{% else %}/media/{{ product.image }}?v={{ product.updated_at|date:'U' }}{% endif %}" alt="{{ product.product.name }}">
-                            
+                            <a href="{% url 'show_product' product.id %}">
+                                <img src="{{ product.image_url }}?v={{ product.updated_at|date:'U' }}" alt="{{ product.product.name }}">
                             </a>
-                        </div> 
+                        </div>
                         <style>
                         .sectionimg{
                             height: 255px !important;
@@ -230,11 +230,28 @@
                         <a class="tag" href="#">{{ product.product.category.name }}</a>
                         <p class="product-title"><a href="">{{ product.product.name }}</a></p>
                         <div class="product-rating">
-                            <!-- Add your rating logic here -->
-                            <div class="star-rating" itemprop="reviewRating" itemscope="" itemtype="http://schema.org/Rating" title="Rated 4 out of 5">
-                                <span style="width: 60%"></span>
-                            </div>
-                            <a href="#" class="product-rating-count"><span class="count">3</span> Reviews</a>
+                            {% with review_data=new_arrival_reviews_dict|get_item:product.id %}
+                                {% if review_data %}
+                                    {% if review_data.review_count > 0 %}
+                                    <div class="star-rating" itemprop="reviewRating" itemscope="" itemtype="http://schema.org/Rating" title="Rated {{ review_data.avg_rating }} out of 5">
+                                        <span style="width: {% widthratio review_data.avg_rating 1 20 %}%"></span>
+                                    </div>
+                                    <a href="#" class="product-rating-count review-clickable" data-product-id="{{ product.id }}" data-product-name="{{ product.product.name }}">
+                                        <span class="count">{{ review_data.review_count }}</span> Review{{ review_data.review_count|pluralize }}
+                                    </a>
+                                    {% else %}
+                                    <div class="star-rating" title="No ratings yet">
+                                        <span style="width: 0%"></span>
+                                    </div>
+                                    <span class="product-rating-count text-muted">No reviews yet</span>
+                                    {% endif %}
+                                {% else %}
+                                <div class="star-rating" title="No ratings yet">
+                                    <span style="width: 0%"></span>
+                                </div>
+                                <span class="product-rating-count text-muted">No reviews yet</span>
+                                {% endif %}
+                            {% endwith %}
                         </div>
                         <p class="product-description">
                             {{ product.description }}
@@ -324,8 +341,8 @@
                 <div class="product-item">
                     <div class="product-item-inner">
                         <div class="product-img-wrap sectionimg">
-                            <a href="{% url 'show_product' product.id %}"  >
-                            <img src="{% if product.image|slice:':4' == 'http' %}{{ product.image }}?v={{ product.updated_at|date:'U' }}{% elif product.image|slice:':1' == '/' %}{{ product.image }}{% elif product.image|slice:':7' == 'images/' %}https://images.prathmeshsoni.works/{{ product.image }}?v={{ product.updated_at|date:'U' }}{% else %}/media/{{ product.image }}?v={{ product.updated_at|date:'U' }}{% endif %}" alt="{{ product.product.name }}">
+                            <a href="{% url 'show_product' product.id %}">
+                                <img src="{{ product.image_url }}?v={{ product.updated_at|date:'U' }}" alt="{{ product.product.name }}">
                             </a>
                         </div>
                         <style>
@@ -343,11 +360,28 @@
                         <a class="tag" href="#">{{ product.product.category.name }}</a>
                         <p class="product-title"><a href="">{{ product.product.name }}</a></p>
                         <div class="product-rating">
-                            <!-- Add your rating logic here -->
-                            <div class="star-rating" itemprop="reviewRating" itemscope="" itemtype="http://schema.org/Rating" title="Rated 4 out of 5">
-                                <span style="width: 60%"></span>
-                            </div>
-                            <a href="#" class="product-rating-count"><span class="count">3</span> Reviews</a>
+                            {% with review_data=most_buy_reviews_dict|get_item:product.id %}
+                                {% if review_data %}
+                                    {% if review_data.review_count > 0 %}
+                                    <div class="star-rating" itemprop="reviewRating" itemscope="" itemtype="http://schema.org/Rating" title="Rated {{ review_data.avg_rating }} out of 5">
+                                        <span style="width: {% widthratio review_data.avg_rating 1 20 %}%"></span>
+                                    </div>
+                                    <a href="#" class="product-rating-count review-clickable" data-product-id="{{ product.id }}" data-product-name="{{ product.product.name }}">
+                                        <span class="count">{{ review_data.review_count }}</span> Review{{ review_data.review_count|pluralize }}
+                                    </a>
+                                    {% else %}
+                                    <div class="star-rating" title="No ratings yet">
+                                        <span style="width: 0%"></span>
+                                    </div>
+                                    <span class="product-rating-count text-muted">No reviews yet</span>
+                                    {% endif %}
+                                {% else %}
+                                <div class="star-rating" title="No ratings yet">
+                                    <span style="width: 0%"></span>
+                                </div>
+                                <span class="product-rating-count text-muted">No reviews yet</span>
+                                {% endif %}
+                            {% endwith %}
                         </div>
                         <p class="product-description">
                             {{ product.description }}
@@ -427,6 +461,205 @@
     </section> {% endcomment %}
     <!-- End Brnad Logo -->
 
+<!-- Review Modal -->
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reviewModalLabel">
+                    <i class="fa fa-star text-warning"></i> Reviews for <span id="modalProductName"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="reviewModalBody">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading reviews...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.review-clickable {
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.review-clickable:hover {
+    color: #34b79d !important;
+    text-decoration: underline;
+}
+
+.review-item {
+    border-bottom: 1px solid #eee;
+    padding: 15px 0;
+}
+
+.review-item:last-child {
+    border-bottom: none;
+}
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.reviewer-name {
+    font-weight: bold;
+    color: #333;
+}
+
+.review-date {
+    font-size: 0.9em;
+    color: #999;
+}
+
+.review-stars {
+    color: #ffc107;
+    font-size: 16px;
+    margin: 5px 0;
+}
+
+.review-comment {
+    color: #666;
+    line-height: 1.6;
+    margin-top: 8px;
+}
+
+.verified-badge {
+    background: #28a745;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.75em;
+    margin-left: 8px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if Bootstrap modal is available
+    if (typeof bootstrap === 'undefined') {
+        // Load Bootstrap JS if not available
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js';
+        document.head.appendChild(script);
+        script.onload = initReviewModal;
+    } else {
+        initReviewModal();
+    }
+    
+    function initReviewModal() {
+        const reviewModalElement = document.getElementById('reviewModal');
+        if (!reviewModalElement) return;
+        
+        const reviewModal = new bootstrap.Modal(reviewModalElement);
+        const reviewClickables = document.querySelectorAll('.review-clickable');
+        
+        reviewClickables.forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const productId = this.getAttribute('data-product-id');
+                const productName = this.getAttribute('data-product-name');
+                
+                document.getElementById('modalProductName').textContent = productName;
+                document.getElementById('reviewModalBody').innerHTML = `
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading reviews...</p>
+                    </div>
+                `;
+                
+                reviewModal.show();
+                
+                // Fetch reviews via AJAX
+                fetch(`/get_product_reviews/${productId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            displayReviews(data.reviews);
+                        } else {
+                            document.getElementById('reviewModalBody').innerHTML = `
+                                <div class="alert alert-warning">
+                                    <i class="fa fa-exclamation-triangle"></i> ${data.message || 'No reviews found'}
+                                </div>
+                            `;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching reviews:', error);
+                        document.getElementById('reviewModalBody').innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fa fa-times-circle"></i> Error loading reviews. Please try again.
+                            </div>
+                        `;
+                    });
+            });
+        });
+        
+        function displayReviews(reviews) {
+            if (reviews.length === 0) {
+                document.getElementById('reviewModalBody').innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fa fa-info-circle"></i> No reviews yet for this product.
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            reviews.forEach(function(review) {
+                const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
+                const reviewerName = review.user_name || review.reviewer_name || 'Anonymous';
+                const reviewDate = new Date(review.created_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+                const verifiedBadge = review.is_verified_purchase ? 
+                    '<span class="verified-badge"><i class="fa fa-check"></i> Verified Purchase</span>' : '';
+                
+                html += `
+                    <div class="review-item">
+                        <div class="review-header">
+                            <div>
+                                <span class="reviewer-name">${escapeHtml(reviewerName)}</span>
+                                ${verifiedBadge}
+                            </div>
+                            <span class="review-date">${reviewDate}</span>
+                        </div>
+                        <div class="review-stars" title="${review.rating} out of 5 stars">
+                            ${stars}
+                            <span class="ms-2">${review.rating} / 5</span>
+                        </div>
+                        ${review.comment ? `<div class="review-comment">${escapeHtml(review.comment)}</div>` : ''}
+                    </div>
+                `;
+            });
+            
+            document.getElementById('reviewModalBody').innerHTML = html;
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    }
+});
+</script>
+
 </div>
 </div>
 {% endblock %}
+
+
