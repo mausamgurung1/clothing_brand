@@ -862,13 +862,13 @@ def place_order(request):
         html_message = render_to_string('order_confirmation_email.html', context)
         plain_message = strip_tags(html_message)
 
-        send_mail(
-            subject,
-            plain_message,
-            from_email,
-            to_email,
-            html_message=html_message
-        )
+        # send_mail(
+        #     subject,
+        #     plain_message,
+        #     from_email,
+        #     to_email,
+        #     html_message=html_message
+        # )
 
         # o_id = place_order_obj.id
         # print(o_id)     

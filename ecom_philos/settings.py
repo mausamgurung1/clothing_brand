@@ -56,6 +56,7 @@ INSTALLED_APPS = [
 EXTERNAL_APPS = [
     'app',
     'admin_app'
+    'payment'
  ]
 
 
