@@ -428,7 +428,7 @@ def check_stock_quantity(request):
     selected_size = request.POST.get('selected_size')
     selected_color = request.POST.get('selected_color')
 
-    product_size_color = ProductSizeNColor.objects.get(product_id=product_id, size__name=selected_size, color__name=selected_color)
+    product_size_color = ProductSizeNColor.objects.filter(product_id=product_id, size__name=selected_size, color__name=selected_color).first()
 
     stock_quantity = product_size_color.stock_quantity
 
@@ -451,7 +451,6 @@ def check_stock(subproduct_id, selected_size, selected_color):
 
 
 def addcart(request, id):
-    breakpoint()
     if 'user' not in request.session:
         return redirect('login')
     
