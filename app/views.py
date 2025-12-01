@@ -2,13 +2,11 @@
 import datetime
 import re
 
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login as auth_login
 from django.contrib.auth import logout
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User as DjangoUser
-from django.core.mail import send_mail
 from django.db.models import F
 # from xhtml2pdf import pisa
 from django.db.models import Sum
@@ -105,8 +103,8 @@ def home(request):
 
 
     # Get reviews for products on homepage
-    from django.db.models import Avg, Count
-    
+    from django.db.models import Avg
+
     # Create dictionaries for quick lookup
     new_arrival_reviews_dict = {}
     for product in new_arrival:
@@ -792,26 +790,23 @@ def updatecart(request):
     return redirect('cart')
 
 
-
 def checkout(request):
     if 'user' not in request.session:
         return redirect('login')
-    
-    user_info =check_user(request)
+
+    user_info = check_user(request)
     user = User.objects.get(pk=user_info['user'].id)
     cart_obj = Cart.objects.filter(uname=user)
-    
 
     currency_type = request.session.get('currency', '')
-    
+
     for item in cart_obj:
-        # Only set total_price if not using USD (will be set by currancy_cart for USD)
         if 'USD' not in currency_type:
             item.total_price = item.quantity * item.subproduct.product.price
-    
+
+
     currancy_cart(cart_obj, request.session.get('currency'))
-    
-    # Ensure attributes are set after currency conversion
+
     for item in cart_obj:
         if not hasattr(item, 'total_price_usd'):
             item.total_price_usd = None
@@ -819,38 +814,34 @@ def checkout(request):
             item.total_price = item.quantity * item.subproduct.product.price
 
     total_cart_price = sum([item.total_price for item in cart_obj if item.total_price is not None])
-    total_cart_price_usd = sum([getattr(item, 'total_price_usd', None) or 0 for item in cart_obj if getattr(item, 'total_price_usd', None) is not None])
+    total_cart_price_usd = sum([getattr(item, 'total_price_usd', None) or 0 for item in cart_obj if
+                                getattr(item, 'total_price_usd', None) is not None])
 
     shipping_price = 50
     shipping_price_usd = 1
 
     after_shipping_price = total_cart_price + shipping_price
     after_shipping_price_usd = total_cart_price_usd + shipping_price_usd
-
-
     state = stateModel.objects.all()
+    user_address = AddressModel.objects.filter(user_id=user).first()
 
-    user_address = AddressModel.objects.filter( user_id=user).first()
-    
-    
     context = {
-        'users':cart_obj,
-        **user_info, 
-        'state':state,
-        'user_address':user_address, 
-        'total_cart_price':total_cart_price, 
-        'after_shipping_price':after_shipping_price,
-        'number_of_items':len(cart_obj),
+        'users': cart_obj,
+        **user_info,
+        'state': state,
+        'user_address': user_address,
+        'total_cart_price': total_cart_price,
+        'after_shipping_price': after_shipping_price,
+        'number_of_items': len(cart_obj),
         'total_cart_price_usd': total_cart_price_usd,
         'after_shipping_price_usd': after_shipping_price_usd,
         'shipping_price_usd': shipping_price_usd,
-        'shipping_price': shipping_price
-        
-        }
-    
-    return render(request, 'checkout.html',context)
+        'shipping_price': shipping_price,
+        'stripe_public_key': settings.STRIPE_PUBLIC_KEY,
+        'PAYPAL_CLIENT_ID': settings.PAYPAL_CLIENT_ID,
+    }
 
-
+    return render(request, 'checkout.html', context)
 
 def address(request):
     try:

@@ -109,6 +109,7 @@ urlpatterns = [
     path('return_order/<int:order_id>/', return_order, name='return_order'),
     path('show_product/<int:id>/', show_product, name='show_product'),
     path('<str:cate>/' ,section , name='section'),
+    path('payment', include('src.payment.urls'))
 
 
 ]

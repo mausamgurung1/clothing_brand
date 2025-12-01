@@ -12,6 +12,15 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+load_dotenv()
+
+STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY', 'pk_test_51REPLACEME')
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', 'sk_test_51REPLACEME')
+
+PAYPAL_CLIENT_ID = os.getenv('PAYPAL_CLIENT_ID', 'your_sandbox_client_id_here')
+PAYPAL_SECRET = os.getenv('PAYPAL_SECRET', 'your_sandbox_secret_here')
+PAYPAL_MODE = "sandbox"  # Change to "live" later
 # from local_settings import *
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -228,3 +237,19 @@ LOGIN_REDIRECT_URL = '/admin_side/'
 LOGOUT_REDIRECT_URL = '/admin/login/?next=/admin_side/'
 
 
+
+# Stripe Configuration
+STRIPE_PUBLIC_KEY = 'pk_test_your_publishable_key_here'
+STRIPE_SECRET_KEY = 'sk_test_your_secret_key_here'
+
+# PayPal Configuration
+PAYPAL_CLIENT_ID = 'AcZOkD8qxeXB60FwacKV0z2zXX_vBtCEaLkvpYMMsbxqMt_MiwGtDwwvkgz_kWCiX5XCx0WLLmKrv8L9'
+PAYPAL_CLIENT_SECRET = 'EIQR4coKROdJSIBYP8-GuKy-iV8773_wn75oM6_9oZVhCJJM7UPVADTB9Dmi0l3Q5FcdsrBP9yPteDo-'
+PAYPAL_MODE = 'sandbox'  # Change to 'live' for production
+
+# For production, use environment variables:
+# import os
+# STRIPE_PUBLIC_KEY = os.environ.get('STRIPE_PUBLIC_KEY')
+# STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY')
+# PAYPAL_CLIENT_ID = os.environ.get('PAYPAL_CLIENT_ID')
+# PAYPAL_CLIENT_SECRET = os.environ.get('PAYPAL_CLIENT_SECRET')
