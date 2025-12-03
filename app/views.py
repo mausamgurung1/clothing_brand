@@ -798,7 +798,7 @@ def checkout(request):
     user = User.objects.get(pk=user_info['user'].id)
     cart_obj = Cart.objects.filter(uname=user)
 
-    currency_type = request.session.get('currency', '')
+    currency_type = request.session.get('currency', '') or 'USD'
 
     for item in cart_obj:
         if 'USD' not in currency_type:

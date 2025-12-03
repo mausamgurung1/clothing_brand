@@ -278,295 +278,388 @@
         </section>
     </div>
 </div>
+<!-- Load Stripe.js -->
+<script src="https://js.stripe.com/v3/"></script>
 
-    <!-- Load Stripe.js -->
-    <script src="https://js.stripe.com/v3/"></script>
+<!-- Load PayPal SDK -->
+<script src="https://www.paypal.com/sdk/js?client-id={{ PAYPAL_CLIENT_ID }}&currency=USD"></script>
 
-    <!-- Load PayPal SDK -->
-    <script src="https://www.paypal.com/sdk/js?client-id={{ PAYPAL_CLIENT_ID }}&currency=USD"></script>
+<!-- SweetAlert2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@10">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- SweetAlert2 -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@10">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        // Safely pass USD total without commas or symbols
-        const paypalTotalUSD = {{ after_shipping_price_usd|floatformat:2|default:"0.00"|stringformat:".2f" }};
-    </script>
-    <script>
-        // Get CSRF token
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
+<script>
+    // CRITICAL FIX: Define paypalTotalUSD properly
+    const paypalTotalUSD = parseFloat({{ after_shipping_price_usd|default:"0" }});
+    console.log('PayPal Total USD:', paypalTotalUSD);
+    
+    // Validate the amount
+    if (!paypalTotalUSD || paypalTotalUSD <= 0) {
+        console.error('Invalid PayPal amount detected!');
+    }
+</script>
+
+<script>
+    // Get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
                 }
             }
-            return cookieValue;
+        }
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
+    // Initialize Stripe
+    const stripe = Stripe('{{ stripe_public_key }}');
+    const elements = stripe.elements();
+    const cardElement = elements.create('card', {
+        style: {
+            base: {
+                fontSize: '16px',
+                color: '#32325d',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                '::placeholder': {
+                    color: '#aab7c4'
+                }
+            },
+            invalid: {
+                color: '#fa755a',
+                iconColor: '#fa755a'
+            }
+        }
+    });
+    cardElement.mount('#card-element');
+
+    cardElement.on('change', (event) => {
+        const displayError = document.getElementById('card-errors');
+        if (event.error) {
+            displayError.textContent = event.error.message;
+            displayError.style.display = 'block';
+        } else {
+            displayError.textContent = '';
+            displayError.style.display = 'none';
+        }
+    });
+
+    // PayPal Integration with enhanced error handling
+    paypal.Buttons({
+        createOrder: function (data, actions) {
+            console.log('PayPal: Creating order...');
+            
+            if (!validateAddressForm()) {
+                console.error('PayPal: Address validation failed');
+                Swal.fire('Error', 'Please fill in all required billing details', 'warning');
+                return actions.reject();
+            }
+
+            // Validate amount
+            if (!paypalTotalUSD || paypalTotalUSD <= 0) {
+                console.error('PayPal: Invalid amount', paypalTotalUSD);
+                Swal.fire('Error', 'Invalid order amount. Please refresh the page.', 'error');
+                return actions.reject();
+            }
+
+            console.log('PayPal: Order amount:', paypalTotalUSD.toFixed(2));
+
+            return actions.order.create({
+                purchase_units: [{
+                    amount: {
+                        value: paypalTotalUSD.toFixed(2),
+                        currency_code: 'USD'
+                    },
+                    description: 'Clothing Order'
+                }]
+            }).then(function(orderId) {
+                console.log('PayPal: Order created with ID:', orderId);
+                return orderId;
+            }).catch(function(error) {
+                console.error('PayPal: Error creating order:', error);
+                Swal.fire('Error', 'Failed to create PayPal order: ' + error.message, 'error');
+                throw error;
+            });
+        },
+        
+        onApprove: function (data, actions) {
+            console.log('PayPal: Payment approved, capturing order...');
+            console.log('PayPal: Order ID:', data.orderID);
+            
+            return actions.order.capture().then(function (details) {
+                console.log('PayPal: Order captured successfully');
+                console.log('PayPal: Capture details:', details);
+                
+                Swal.fire({
+                    title: 'Processing...',
+                    text: 'Please wait while we confirm your payment',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                
+                return handlePayPalSuccess(data.orderID, details);
+            }).catch(function(error) {
+                console.error('PayPal: Capture error:', error);
+                Swal.fire('Error', 'Failed to capture payment: ' + error.message, 'error');
+            });
+        },
+        
+        onError: function (err) {
+            console.error('PayPal: Payment error:', err);
+            
+            let errorMessage = 'There was an issue processing your PayPal payment.';
+            
+            if (err && err.message) {
+                errorMessage += ' Details: ' + err.message;
+            }
+            
+            Swal.fire({
+                icon: 'error',
+                title: 'Payment Failed',
+                text: errorMessage,
+                footer: 'Please try again or contact support if the issue persists.'
+            });
+        },
+        
+        onCancel: function (data) {
+            console.log('PayPal: Payment cancelled by user');
+            Swal.fire('Cancelled', 'You cancelled the PayPal payment', 'info');
+        }
+    }).render('#paypal-button-container');
+
+    // PayPal Success Handler
+    async function handlePayPalSuccess(orderID, details) {
+        console.log('Processing PayPal success...');
+        console.log('Order ID:', orderID);
+        
+        try {
+            // Step 1: Create order in session
+            console.log('Step 1: Creating order in session...');
+            const createResponse = await fetch('/create-paypal-order/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({ orderID: orderID })
+            });
+
+            console.log('Create order response status:', createResponse.status);
+            const createResult = await createResponse.json();
+            console.log('Create order result:', createResult);
+
+            if (!createResult.success) {
+                throw new Error(createResult.error || 'Failed to create order in session');
+            }
+
+            // Step 2: Capture and save order
+            console.log('Step 2: Capturing order...');
+            const captureResponse = await fetch('/capture-paypal-order/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({ orderID: orderID })
+            });
+
+            console.log('Capture response status:', captureResponse.status);
+            
+            if (!captureResponse.ok) {
+                const errorText = await captureResponse.text();
+                console.error('Capture response error:', errorText);
+                throw new Error('Server returned error: ' + captureResponse.status);
+            }
+
+            const result = await captureResponse.json();
+            console.log('Capture result:', result);
+
+            if (result.success) {
+                console.log('Order completed successfully!');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Order Placed!',
+                    text: `Your order #${result.order_id} has been placed successfully!`,
+                    confirmButtonText: 'View Orders'
+                }).then(() => {
+                    window.location.href = '/order_history/';
+                });
+            } else {
+                throw new Error(result.error || 'Failed to complete order');
+            }
+        } catch (err) {
+            console.error('PayPal processing error:', err);
+            Swal.fire({
+                icon: 'error',
+                title: 'Processing Failed',
+                text: err.message || 'Failed to process PayPal payment. Please contact support.',
+                footer: 'Your payment may have been captured. Please check your email for confirmation.'
+            });
+        }
+    }
+
+    // Payment method toggle
+    document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+        radio.addEventListener('change', function () {
+            console.log('Payment method changed to:', this.value);
+            
+            // Hide all payment sections
+            document.getElementById('stripe-payment').style.display = 'none';
+            document.getElementById('paypal-payment').style.display = 'none';
+            document.getElementById('cod-payment').style.display = 'none';
+            document.getElementById('place-order-container').style.display = 'none';
+
+            // Show selected payment section
+            if (this.value === 'stripe') {
+                document.getElementById('stripe-payment').style.display = 'block';
+                document.getElementById('place-order-container').style.display = 'block';
+            } else if (this.value === 'paypal') {
+                document.getElementById('paypal-payment').style.display = 'block';
+            } else if (this.value === 'cod') {
+                document.getElementById('cod-payment').style.display = 'block';
+                document.getElementById('place-order-container').style.display = 'block';
+            }
+        });
+    });
+
+    // Place Order Button (for Stripe and COD)
+    document.getElementById('place-order-btn').addEventListener('click', async function (e) {
+        e.preventDefault();
+        console.log('Place order button clicked');
+
+        if (!validateAddressForm()) {
+            Swal.fire('Error', 'Please fill in all required billing details', 'warning');
+            return;
         }
 
-        const csrftoken = getCookie('csrftoken');
+        const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+        console.log('Selected payment method:', paymentMethod);
 
-        // Initialize Stripe
-        const stripe = Stripe('{{ stripe_public_key }}');
-        const elements = stripe.elements();
-        const cardElement = elements.create('card', {
-            style: {
-                base: {
-                    fontSize: '16px',
-                    color: '#32325d',
-                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                    '::placeholder': {
-                        color: '#aab7c4'
-                    }
-                },
-                invalid: {
-                    color: '#fa755a',
-                    iconColor: '#fa755a'
-                }
-            }
-        });
-        cardElement.mount('#card-element');
+        if (paymentMethod === 'cod') {
+            handleCOD();
+        } else if (paymentMethod === 'stripe') {
+            handleStripePayment();
+        }
+    });
 
-        cardElement.on('change', (event) => {
-            const displayError = document.getElementById('card-errors');
-            if (event.error) {
-                displayError.textContent = event.error.message;
-                displayError.style.display = 'block';
-            } else {
-                displayError.textContent = '';
-                displayError.style.display = 'none';
+    // Stripe Payment Handler
+    async function handleStripePayment() {
+        console.log('Processing Stripe payment...');
+        
+        Swal.fire({
+            title: 'Processing...',
+            text: 'Please wait while we process your payment',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
             }
         });
 
-        // PayPal Integration
-        paypal.Buttons({
-            createOrder: function (data, actions) {
-                if (!validateAddressForm()) {
-                    Swal.fire('Error', 'Please fill in all required billing details', 'warning');
-                    return actions.reject();
-                }
-
-                // Use clean number
-                return actions.order.create({
-                    purchase_units: [{
-                        amount: {
-                            value: paypalTotalUSD.toFixed(2),  // ← Always valid format
-                            currency_code: 'USD'
-                        },
-                        description: ' Clothing Order'
-                    }]
-                });
-            },
-            onApprove: function (data, actions) {
-                return actions.order.capture().then(function (details) {
-                    Swal.fire({
-                        title: 'Processing...',
-                        text: 'Please wait while we confirm your payment',
-                        allowOutsideClick: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        }
-                    });
-                    handlePayPalSuccess(data.orderID);
-                });
-            },
-            onError: function (err) {
-                console.error('PayPal Error:', err);
-                Swal.fire('Payment Failed', 'There was an issue processing your PayPal payment. Please try again.', 'error');
-            },
-            onCancel: function (data) {
-                Swal.fire('Cancelled', 'You cancelled the PayPal payment', 'info');
-            }
-        }).render('#paypal-button-container');
-
-        // Payment method toggle
-        document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
-            radio.addEventListener('change', function () {
-                // Hide all payment sections
-                document.getElementById('stripe-payment').style.display = 'none';
-                document.getElementById('paypal-payment').style.display = 'none';
-                document.getElementById('cod-payment').style.display = 'none';
-                document.getElementById('place-order-container').style.display = 'none';
-
-                // Show selected payment section
-                if (this.value === 'stripe') {
-                    document.getElementById('stripe-payment').style.display = 'block';
-                    document.getElementById('place-order-container').style.display = 'block';
-                } else if (this.value === 'paypal') {
-                    document.getElementById('paypal-payment').style.display = 'block';
-                } else if (this.value === 'cod') {
-                    document.getElementById('cod-payment').style.display = 'block';
-                    document.getElementById('place-order-container').style.display = 'block';
+        try {
+            const response = await fetch('/create-stripe-payment-intent/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
                 }
             });
-        });
 
-        // Place Order Button (for Stripe and COD)
-        document.getElementById('place-order-btn').addEventListener('click', async function (e) {
-            e.preventDefault();
+            const data = await response.json();
 
-            if (!validateAddressForm()) {
-                Swal.fire('Error', 'Please fill in all required billing details', 'warning');
+            if (data.error) {
+                Swal.fire('Error', data.error, 'error');
                 return;
             }
 
-            const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+            const {error, paymentIntent} = await stripe.confirmCardPayment(data.clientSecret, {
+                payment_method: {
+                    card: cardElement
+                }
+            });
 
-            if (paymentMethod === 'cod') {
-                handleCOD();
-            } else if (paymentMethod === 'stripe') {
-                handleStripePayment();
+            if (error) {
+                console.error('Stripe error:', error);
+                Swal.fire('Payment Failed', error.message, 'error');
+            } else if (paymentIntent.status === 'succeeded') {
+                console.log('Stripe payment succeeded');
+                handleStripeSuccess(paymentIntent.id);
+            }
+        } catch (err) {
+            console.error('Stripe Error:', err);
+            Swal.fire('Error', 'Payment processing failed. Please try again.', 'error');
+        }
+    }
+
+    // Stripe Success Handler
+    async function handleStripeSuccess(paymentIntentId) {
+        console.log('Processing Stripe success...');
+        
+        try {
+            const response = await fetch('/payment-success-stripe/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({payment_intent_id: paymentIntentId})
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Order Placed!',
+                    text: `Your order #${result.order_id} has been placed successfully!`,
+                    confirmButtonText: 'View Orders'
+                }).then(() => {
+                    window.location.href = '/order_history/';
+                });
+            } else {
+                Swal.fire('Error', result.error || 'Failed to create order', 'error');
+            }
+        } catch (err) {
+            console.error('Order creation error:', err);
+            Swal.fire('Error', 'Failed to create order. Please contact support.', 'error');
+        }
+    }
+
+    // COD Handler
+    function handleCOD() {
+        Swal.fire({
+            title: 'Confirm Order',
+            text: 'You will pay cash when your order is delivered. Continue?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, place order',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = '/payment-success-cod/';
             }
         });
+    }
 
-        // Stripe Payment Handler
-        async function handleStripePayment() {
-            Swal.fire({
-                title: 'Processing...',
-                text: 'Please wait while we process your payment',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-
-            try {
-                const response = await fetch('/create-stripe-payment-intent/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrftoken
-                    }
-                });
-
-                const data = await response.json();
-
-                if (data.error) {
-                    Swal.fire('Error', data.error, 'error');
-                    return;
-                }
-
-                const {error, paymentIntent} = await stripe.confirmCardPayment(data.clientSecret, {
-                    payment_method: {
-                        card: cardElement
-                    }
-                });
-
-                if (error) {
-                    Swal.fire('Payment Failed', error.message, 'error');
-                } else if (paymentIntent.status === 'succeeded') {
-                    handleStripeSuccess(paymentIntent.id);
-                }
-            } catch (err) {
-                console.error('Stripe Error:', err);
-                Swal.fire('Error', 'Payment processing failed. Please try again.', 'error');
-            }
-        }
-
-        // Stripe Success Handler
-        async function handleStripeSuccess(paymentIntentId) {
-            try {
-                const response = await fetch('/payment-success-stripe/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrftoken
-                    },
-                    body: JSON.stringify({payment_intent_id: paymentIntentId})
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Order Placed!',
-                        text: `Your order #${result.order_id} has been placed successfully!`,
-                        confirmButtonText: 'View Orders'
-                    }).then(() => {
-                        window.location.href = '/order_history/';
-                    });
-                } else {
-                    Swal.fire('Error', result.error || 'Failed to create order', 'error');
-                }
-            } catch (err) {
-                console.error('Order creation error:', err);
-                Swal.fire('Error', 'Failed to create order. Please contact support.', 'error');
-            }
-        }
-
-        // PayPal Success Handler
-        async function handlePayPalSuccess(orderID) {
-            try {
-                // Create order in session
-                await fetch('/create-paypal-order/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrftoken
-                    },
-                    body: JSON.stringify({orderID: orderID})
-                });
-
-                // Capture and save order
-                const response = await fetch('/capture-paypal-order/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrftoken
-                    },
-                    body: JSON.stringify({orderID: orderID})
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Order Placed!',
-                        text: `Your order #${result.order_id} has been placed successfully!`,
-                        confirmButtonText: 'View Orders'
-                    }).then(() => {
-                        window.location.href = '/order_history/';
-                    });
-                } else {
-                    Swal.fire('Error', result.error || 'Failed to create order', 'error');
-                }
-            } catch (err) {
-                console.error('PayPal order error:', err);
-                Swal.fire('Error', 'Failed to process PayPal payment. Please contact support.', 'error');
-            }
-        }
-
-        // COD Handler
-        function handleCOD() {
-            Swal.fire({
-                title: 'Confirm Order',
-                text: 'You will pay cash when your order is delivered. Continue?',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Yes, place order',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = '/payment-success-cod/';
-                }
-            });
-        }
-
-        function validateAddressForm() {
-            const fields = ['first_name', 'last_name', 'address', 'city', 'country', 'state', 'pincode', 'phone', 'email'];
-            return fields.every(field => {
-                const element = document.querySelector(`[name="${field}"]`);
-                return element && element.value.trim() !== '';
-            });
-        }
-    </script>
+    // Validate address form
+    function validateAddressForm() {
+        const fields = ['first_name', 'last_name', 'address', 'city', 'country', 'state', 'pincode', 'phone', 'email'];
+        const isValid = fields.every(field => {
+            const element = document.querySelector(`[name="${field}"]`);
+            return element && element.value.trim() !== '';
+        });
+        
+        console.log('Address validation:', isValid);
+        return isValid;
+    }
+</script>
 
     <style>
         .payment-methods {
