@@ -350,162 +350,223 @@
         }
     });
 
-    // PayPal Integration with enhanced error handling
-    paypal.Buttons({
-        createOrder: function (data, actions) {
-            console.log('PayPal: Creating order...');
-            
-            if (!validateAddressForm()) {
-                console.error('PayPal: Address validation failed');
-                Swal.fire('Error', 'Please fill in all required billing details', 'warning');
-                return actions.reject();
-            }
-
-            // Validate amount
-            if (!paypalTotalUSD || paypalTotalUSD <= 0) {
-                console.error('PayPal: Invalid amount', paypalTotalUSD);
-                Swal.fire('Error', 'Invalid order amount. Please refresh the page.', 'error');
-                return actions.reject();
-            }
-
-            console.log('PayPal: Order amount:', paypalTotalUSD.toFixed(2));
-
-            return actions.order.create({
-                purchase_units: [{
-                    amount: {
-                        value: paypalTotalUSD.toFixed(2),
-                        currency_code: 'USD'
-                    },
-                    description: 'Clothing Order'
-                }]
-            }).then(function(orderId) {
-                console.log('PayPal: Order created with ID:', orderId);
-                return orderId;
-            }).catch(function(error) {
-                console.error('PayPal: Error creating order:', error);
-                Swal.fire('Error', 'Failed to create PayPal order: ' + error.message, 'error');
-                throw error;
-            });
-        },
+    // Simplified PayPal Integration - Less Strict
+paypal.Buttons({
+    createOrder: function (data, actions) {
+        console.log('=== PayPal Order Creation Started ===');
+        console.log('Amount:', paypalTotalUSD);
         
-        onApprove: function (data, actions) {
-            console.log('PayPal: Payment approved, capturing order...');
-            console.log('PayPal: Order ID:', data.orderID);
+        // Validation
+        if (!validateAddressForm()) {
+            console.error('Validation failed: Address incomplete');
+            Swal.fire('Error', 'Please fill in all required billing details', 'warning');
+            return actions.reject();
+        }
+
+        if (!paypalTotalUSD || paypalTotalUSD <= 0) {
+            console.error('Validation failed: Invalid amount');
+            Swal.fire('Error', 'Invalid order amount', 'error');
+            return actions.reject();
+        }
+
+        // SIMPLIFIED: Just the essential fields
+        return actions.order.create({
+            purchase_units: [{
+                amount: {
+                    currency_code: 'USD',
+                    value: paypalTotalUSD.toFixed(2)
+                }
+            }]
+        }).then(function(orderId) {
+            console.log('✓ PayPal order created:', orderId);
+            return orderId;
+        }).catch(function(error) {
+            console.error('✗ PayPal order creation failed:', error);
             
-            return actions.order.capture().then(function (details) {
-                console.log('PayPal: Order captured successfully');
-                console.log('PayPal: Capture details:', details);
-                
-                Swal.fire({
-                    title: 'Processing...',
-                    text: 'Please wait while we confirm your payment',
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
-                
-                return handlePayPalSuccess(data.orderID, details);
-            }).catch(function(error) {
-                console.error('PayPal: Capture error:', error);
-                Swal.fire('Error', 'Failed to capture payment: ' + error.message, 'error');
-            });
-        },
-        
-        onError: function (err) {
-            console.error('PayPal: Payment error:', err);
-            
-            let errorMessage = 'There was an issue processing your PayPal payment.';
-            
-            if (err && err.message) {
-                errorMessage += ' Details: ' + err.message;
-            }
-            
+            // Show user-friendly error
             Swal.fire({
                 icon: 'error',
-                title: 'Payment Failed',
-                text: errorMessage,
-                footer: 'Please try again or contact support if the issue persists.'
+                title: 'Cannot Create Order',
+                html: `
+                    <p><strong>PayPal is having trouble processing your request.</strong></p>
+                    <p>This usually happens when:</p>
+                    <ul style="text-align: left; margin: 15px auto; max-width: 400px;">
+                        <li>Sandbox account needs funds reset</li>
+                        <li>Browser is blocking PayPal</li>
+                        <li>Currency conversion issues</li>
+                    </ul>
+                    <p><strong>Quick fixes:</strong></p>
+                    <ol style="text-align: left; margin: 15px auto; max-width: 400px;">
+                        <li>Try refreshing the page</li>
+                        <li>Clear browser cache</li>
+                        <li>Use Credit Card payment instead</li>
+                    </ol>
+                `,
+                confirmButtonText: 'Try Again'
             });
-        },
-        
-        onCancel: function (data) {
-            console.log('PayPal: Payment cancelled by user');
-            Swal.fire('Cancelled', 'You cancelled the PayPal payment', 'info');
-        }
-    }).render('#paypal-button-container');
-
-    // PayPal Success Handler
-    async function handlePayPalSuccess(orderID, details) {
-        console.log('Processing PayPal success...');
-        console.log('Order ID:', orderID);
-        
-        try {
-            // Step 1: Create order in session
-            console.log('Step 1: Creating order in session...');
-            const createResponse = await fetch('/create-paypal-order/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken
-                },
-                body: JSON.stringify({ orderID: orderID })
-            });
-
-            console.log('Create order response status:', createResponse.status);
-            const createResult = await createResponse.json();
-            console.log('Create order result:', createResult);
-
-            if (!createResult.success) {
-                throw new Error(createResult.error || 'Failed to create order in session');
-            }
-
-            // Step 2: Capture and save order
-            console.log('Step 2: Capturing order...');
-            const captureResponse = await fetch('/capture-paypal-order/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken
-                },
-                body: JSON.stringify({ orderID: orderID })
-            });
-
-            console.log('Capture response status:', captureResponse.status);
             
-            if (!captureResponse.ok) {
-                const errorText = await captureResponse.text();
-                console.error('Capture response error:', errorText);
-                throw new Error('Server returned error: ' + captureResponse.status);
+            throw error;
+        });
+    },
+    
+    onApprove: function (data, actions) {
+        console.log('=== PayPal Payment Approved ===');
+        console.log('Capturing order:', data.orderID);
+        
+        // Show loading state
+        Swal.fire({
+            title: 'Processing Payment...',
+            html: 'Please wait while we confirm your PayPal payment.<br><small>Do not close this window.</small>',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => {
+                Swal.showLoading();
             }
-
-            const result = await captureResponse.json();
-            console.log('Capture result:', result);
-
-            if (result.success) {
-                console.log('Order completed successfully!');
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Order Placed!',
-                    text: `Your order #${result.order_id} has been placed successfully!`,
-                    confirmButtonText: 'View Orders'
-                }).then(() => {
-                    window.location.href = '/order_history/';
-                });
-            } else {
-                throw new Error(result.error || 'Failed to complete order');
-            }
-        } catch (err) {
-            console.error('PayPal processing error:', err);
+        });
+        
+        return actions.order.capture().then(function (details) {
+            console.log('✓ Payment captured:', details);
+            console.log('Payer:', details.payer.name.given_name);
+            console.log('Status:', details.status);
+            
+            return handlePayPalSuccess(data.orderID, details);
+        }).catch(function(error) {
+            console.error('✗ Payment capture failed:', error);
             Swal.fire({
                 icon: 'error',
-                title: 'Processing Failed',
-                text: err.message || 'Failed to process PayPal payment. Please contact support.',
-                footer: 'Your payment may have been captured. Please check your email for confirmation.'
+                title: 'Capture Failed',
+                text: 'Could not capture your payment. Please contact support.',
+                footer: 'Order ID: ' + data.orderID
             });
-        }
+        });
+    },
+    
+    onError: function (err) {
+        console.error('=== PayPal Error ===');
+        console.error('Error details:', err);
+        
+        // More helpful error message
+        Swal.fire({
+            icon: 'error',
+            title: 'PayPal Error',
+            html: `
+                <p><strong>Unfortunately, PayPal encountered an error.</strong></p>
+                <p style="color: #666; font-size: 14px;">This is often due to sandbox account limitations.</p>
+                <hr style="margin: 15px 0;">
+                <p><strong>Recommended solutions:</strong></p>
+                <div style="text-align: left; margin: 15px auto; max-width: 400px;">
+                    <p>1. <strong>For testing:</strong> Reset your PayPal sandbox account balance</p>
+                    <p>2. <strong>Alternative:</strong> Use the Credit Card payment option</p>
+                    <p>3. <strong>Or:</strong> Try Cash on Delivery</p>
+                </div>
+            `,
+            confirmButtonText: 'Choose Another Method',
+            showCancelButton: true,
+            cancelButtonText: 'Try PayPal Again'
+        });
+    },
+    
+    onCancel: function (data) {
+        console.log('=== PayPal Cancelled ===');
+        Swal.fire({
+            icon: 'info',
+            title: 'Payment Cancelled',
+            text: 'You cancelled the PayPal payment. Your cart is still saved.',
+            confirmButtonText: 'OK'
+        });
+    },
+    
+    style: {
+        layout: 'vertical',
+        color: 'gold',
+        shape: 'rect',
+        label: 'paypal'
     }
+}).render('#paypal-button-container');
 
+// PayPal Success Handler
+async function handlePayPalSuccess(orderID, details) {
+    console.log('=== Processing Order on Server ===');
+    
+    try {
+        // Step 1: Save to session
+        console.log('Step 1: Saving order to session...');
+        const createResponse = await fetch('/create-paypal-order/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({ orderID: orderID })
+        });
+
+        const createResult = await createResponse.json();
+        console.log('Session save result:', createResult);
+
+        if (!createResult.success) {
+            throw new Error(createResult.error || 'Failed to save order');
+        }
+
+        // Step 2: Capture and create database order
+        console.log('Step 2: Creating database order...');
+        const captureResponse = await fetch('/capture-paypal-order/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({ orderID: orderID })
+        });
+
+        if (!captureResponse.ok) {
+            const errorText = await captureResponse.text();
+            console.error('Server error:', errorText);
+            throw new Error('Server error: ' + captureResponse.status);
+        }
+
+        const result = await captureResponse.json();
+        console.log('Capture result:', result);
+
+        if (result.success) {
+            console.log('✓ Order completed successfully!');
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Order Placed Successfully!',
+                html: `
+                    <p><strong>Thank you for your purchase!</strong></p>
+                    <p>Order Number: <strong>#${result.order_id}</strong></p>
+                    <p>A confirmation email has been sent to you.</p>
+                `,
+                confirmButtonText: 'View My Orders',
+                timer: 5000
+            }).then(() => {
+                window.location.href = '/order_history/';
+            });
+        } else {
+            throw new Error(result.error || 'Unknown error');
+        }
+    } catch (err) {
+        console.error('✗ Processing failed:', err);
+        
+        Swal.fire({
+            icon: 'error',
+            title: 'Order Processing Failed',
+            html: `
+                <p><strong>Your payment was received by PayPal, but we couldn't complete the order.</strong></p>
+                <p style="color: #e74c3c;">Error: ${err.message}</p>
+                <hr>
+                <p>Please contact support with this information:</p>
+                <p style="font-family: monospace; background: #f5f5f5; padding: 10px;">
+                    Order ID: ${orderID}<br>
+                    Time: ${new Date().toLocaleString()}
+                </p>
+            `,
+            confirmButtonText: 'Contact Support',
+            footer: 'Don\'t worry - your payment is secure and can be refunded if needed.'
+        });
+    }
+}
     // Payment method toggle
     document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
         radio.addEventListener('change', function () {
